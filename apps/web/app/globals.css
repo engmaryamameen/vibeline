@@ -1,0 +1,97 @@
+@import '../../../packages/ui/src/theme/tokens.css';
+@import './fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--surface-soft)) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgb(var(--surface-soft));
+    border-radius: 3px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--surface-hover));
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background-color: rgb(var(--surface-bg));
+    color: rgb(var(--text-primary));
+  }
+
+  body {
+    font-family: 'Söhne', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent-primary) / 0.25);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--text-muted));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--ring-focus));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--surface-soft)) 0%,
+      rgb(var(--surface-hover)) 50%,
+      rgb(var(--surface-soft)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
