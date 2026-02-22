@@ -14,7 +14,10 @@ export const loginSchema = z.object({
 export const verifyEmailSchema = z
   .object({
     token: z.string().min(1).optional(),
-    code: z.string().regex(/^\d{6}$/, 'Code must be 6 digits').optional()
+    code: z
+      .string()
+      .regex(/^\d{6}$/, 'Code must be 6 digits')
+      .optional()
   })
   .refine((data) => data.token ?? data.code, { message: 'Either token or code is required' });
 
@@ -29,7 +32,10 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1).optional(),
-    code: z.string().regex(/^\d{6}$/, 'Code must be 6 digits').optional(),
+    code: z
+      .string()
+      .regex(/^\d{6}$/, 'Code must be 6 digits')
+      .optional(),
     password: z.string().min(8).max(72)
   })
   .refine((data) => data.token ?? data.code, { message: 'Either token or code is required' });

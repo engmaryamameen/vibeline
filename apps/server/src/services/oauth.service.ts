@@ -290,13 +290,13 @@ class OAuthService {
         email: user.email,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
-        role: user.role as Role,
+        role: user.role,
         emailVerified: user.emailVerified
       },
       tokens: signTokens({
         id: user.id,
         email: user.email,
-        role: user.role as Role
+        role: user.role
       })
     };
   }

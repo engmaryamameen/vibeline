@@ -44,7 +44,11 @@
   }
 
   body {
-    font-family: 'Söhne', system-ui, -apple-system, sans-serif;
+    font-family:
+      'Söhne',
+      system-ui,
+      -apple-system,
+      sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 

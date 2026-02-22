@@ -13,28 +13,28 @@ import { eq } from 'drizzle-orm';
 import { db } from './client';
 import { users } from './schema';
 
-const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD ?? 'Admin123!';
+const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD ?? 'Demo123!';
+const DEMO_EMAIL = 'demo@vibeline.dev';
 
 async function seed() {
-  const adminExists = await db.query.users.findFirst({
-    where: eq(users.email, 'admin@vibeline.dev')
+  const demoUserExists = await db.query.users.findFirst({
+    where: eq(users.email, DEMO_EMAIL)
   });
 
-  if (!adminExists) {
-    const passwordHash = await hash(ADMIN_PASSWORD, 12);
+  if (!demoUserExists) {
+    const passwordHash = await hash(DEMO_PASSWORD, 12);
     await db.insert(users).values({
-      id: 'u_admin',
-      email: 'admin@vibeline.dev',
-      displayName: 'Workspace Admin',
-      role: 'admin',
+      id: 'u_demo',
+      email: DEMO_EMAIL,
+      displayName: 'Demo User',
+      role: 'user',
       emailVerified: true,
       passwordHash
     });
-    console.log('Created admin user (admin@vibeline.dev)');
+    console.log(`Created demo user (${DEMO_EMAIL})`);
   } else {
-    console.log('Admin user already exists');
+    console.log('Demo user already exists');
   }
-
 }
 
 seed()

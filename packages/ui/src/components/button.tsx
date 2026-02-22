@@ -11,14 +11,12 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary:
-    'bg-accent text-surface-bg hover:bg-accent-hover active:bg-accent-hover shadow-sm',
+  primary: 'bg-accent text-surface-bg hover:bg-accent-hover active:bg-accent-hover shadow-sm',
   secondary:
     'bg-surface-elevated text-content-primary border border-border hover:bg-surface-hover active:bg-surface-soft',
   ghost:
     'bg-transparent text-content-secondary hover:text-content-primary hover:bg-surface-hover active:bg-surface-soft',
-  danger:
-    'bg-status-error/10 text-status-error hover:bg-status-error/20 active:bg-status-error/25'
+  danger: 'bg-status-error/10 text-status-error hover:bg-status-error/20 active:bg-status-error/25'
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

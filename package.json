@@ -8,6 +8,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "validate": "pnpm lint && pnpm typecheck && pnpm build",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "clean": "turbo clean"

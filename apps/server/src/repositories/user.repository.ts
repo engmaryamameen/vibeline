@@ -1,16 +1,16 @@
-import type { User } from '@vibeline/types';
+import type { Role, User } from '@vibeline/types';
 import { eq } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
-import type { InferSelectModel } from 'drizzle-orm';
 
 export type StoredUser = {
   id: string;
   email: string;
   displayName: string;
   avatarUrl: string | null;
-  role: string;
+  role: Role;
   emailVerified: boolean;
   passwordHash: string;
   verificationToken?: string | null;
@@ -24,21 +24,22 @@ export type StoredUser = {
 
 const toStoredUser = (row: InferSelectModel<typeof users>): StoredUser => ({
   ...row,
+  role: row.role as Role,
   avatarUrl: row.avatarUrl ?? null,
   verificationToken: row.verificationToken ?? undefined,
   verificationTokenExpiresAt:
     row.verificationTokenExpiresAt != null
-      ? (row.verificationTokenExpiresAt instanceof Date
-          ? row.verificationTokenExpiresAt.toISOString()
-          : String(row.verificationTokenExpiresAt))
+      ? row.verificationTokenExpiresAt instanceof Date
+        ? row.verificationTokenExpiresAt.toISOString()
+        : String(row.verificationTokenExpiresAt)
       : undefined,
   passwordResetToken: row.passwordResetToken ?? undefined,
   passwordResetCode: row.passwordResetCode ?? undefined,
   passwordResetTokenExpiresAt:
     row.passwordResetTokenExpiresAt != null
-      ? (row.passwordResetTokenExpiresAt instanceof Date
-          ? row.passwordResetTokenExpiresAt.toISOString()
-          : String(row.passwordResetTokenExpiresAt))
+      ? row.passwordResetTokenExpiresAt instanceof Date
+        ? row.passwordResetTokenExpiresAt.toISOString()
+        : String(row.passwordResetTokenExpiresAt)
       : undefined
 });
 
@@ -55,9 +56,10 @@ const toPublicUser = (stored: StoredUser): User => {
   return {
     ...user,
     avatarUrl: user.avatarUrl ?? undefined,
-    role: user.role as User['role'],
+    role: user.role,
     emailVerified: user.emailVerified ?? false,
-    createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt)
+    createdAt:
+      user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt)
   };
 };
 
@@ -144,8 +146,7 @@ class UserRepository {
     if (updates.passwordHash !== undefined) payload.passwordHash = updates.passwordHash;
     if ('verificationToken' in updates)
       payload.verificationToken = updates.verificationToken ?? null;
-    if ('verificationCode' in updates)
-      payload.verificationCode = updates.verificationCode ?? null;
+    if ('verificationCode' in updates) payload.verificationCode = updates.verificationCode ?? null;
     if ('verificationTokenExpiresAt' in updates)
       payload.verificationTokenExpiresAt = updates.verificationTokenExpiresAt
         ? new Date(updates.verificationTokenExpiresAt)
@@ -159,11 +160,7 @@ class UserRepository {
         ? new Date(updates.passwordResetTokenExpiresAt)
         : null;
 
-    const [row] = await db
-      .update(users)
-      .set(payload)
-      .where(eq(users.id, id))
-      .returning();
+    const [row] = await db.update(users).set(payload).where(eq(users.id, id)).returning();
 
     return row ? toPublicUser(toStoredUser(row)) : null;
   }

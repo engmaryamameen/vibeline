@@ -43,5 +43,9 @@ Web app runs on `http://localhost:3002` and API on `http://localhost:5001`.
 - `pnpm lint` lint all workspaces
 - `pnpm typecheck` strict typecheck
 - `pnpm build` production builds
+- `pnpm validate` run lint + typecheck + build in sequence
 
-More detail: `docs/architecture.md`
+More detail:
+
+- `docs/architecture.md`
+- `docs/engineering-standards.md`

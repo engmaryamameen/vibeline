@@ -9,11 +9,11 @@ const config: Config = {
         display: ['Söhne', 'system-ui', '-apple-system', 'sans-serif']
       },
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }],
-        'sm': ['0.8125rem', { lineHeight: '1.25rem' }],
-        'base': ['0.875rem', { lineHeight: '1.5rem' }],
-        'lg': ['1rem', { lineHeight: '1.5rem' }],
-        'xl': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }],
+        xs: ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }],
+        sm: ['0.8125rem', { lineHeight: '1.25rem' }],
+        base: ['0.875rem', { lineHeight: '1.5rem' }],
+        lg: ['1rem', { lineHeight: '1.5rem' }],
+        xl: ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }],
         '2xl': ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '-0.02em' }],
         '3xl': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.02em' }]
       },
@@ -40,11 +40,11 @@ const config: Config = {
         '20': '80px'
       },
       borderRadius: {
-        'sm': '6px',
-        'DEFAULT': '8px',
-        'md': '10px',
-        'lg': '12px',
-        'xl': '16px',
+        sm: '6px',
+        DEFAULT: '8px',
+        md: '10px',
+        lg: '12px',
+        xl: '16px',
         '2xl': '20px'
       },
       colors: {
@@ -79,19 +79,19 @@ const config: Config = {
         }
       },
       boxShadow: {
-        'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'DEFAULT': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        'panel': '0 0 0 1px rgb(var(--border-subtle)), 0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'elevated': '0 0 0 1px rgb(var(--border-subtle)), 0 4px 12px 0 rgb(0 0 0 / 0.15)'
+        sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        DEFAULT: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+        md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        panel: '0 0 0 1px rgb(var(--border-subtle)), 0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        elevated: '0 0 0 1px rgb(var(--border-subtle)), 0 4px 12px 0 rgb(0 0 0 / 0.15)'
       },
       animation: {
         'fade-in': 'fadeIn 150ms ease-out',
         'slide-up': 'slideUp 200ms ease-out',
         'slide-down': 'slideDown 200ms ease-out',
         'scale-in': 'scaleIn 150ms ease-out',
-        'shimmer': 'shimmer 2s ease-in-out infinite',
+        shimmer: 'shimmer 2s ease-in-out infinite',
         'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite'
       },
       keyframes: {

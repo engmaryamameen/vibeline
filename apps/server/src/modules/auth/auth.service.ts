@@ -1,6 +1,6 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
-import type { Role, User } from '@vibeline/types';
+import type { User } from '@vibeline/types';
 
 import { AppError } from '@/common/errors/app-error';
 import { logger } from '@/config/logger';
@@ -9,6 +9,7 @@ import { emailService } from '@/services/email.service';
 import { comparePassword, hashPassword } from '@/utils/hash';
 import { signTokens, verifyRefreshToken } from '@/utils/jwt';
 
+import { createPasswordResetArtifacts, createVerificationArtifacts } from './auth.artifacts';
 import type {
   ForgotPasswordRequestDto,
   LoginRequestDto,
@@ -17,127 +18,121 @@ import type {
   VerifyEmailRequestDto
 } from './auth.dto';
 
-const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
-const PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 1;
-
-const generateVerificationToken = (): string => {
-  return randomBytes(32).toString('hex');
-};
-
-const generateVerificationCode = (): string => {
-  const n = randomBytes(4).readUInt32BE(0) % 1_000_000;
-  return n.toString().padStart(6, '0');
-};
-
-const getVerificationTokenExpiry = (): string => {
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + VERIFICATION_TOKEN_EXPIRY_HOURS);
-  return expiry.toISOString();
-};
-
-const generatePasswordResetToken = (): string => {
-  return randomBytes(32).toString('hex');
-};
-
-const generatePasswordResetCode = (): string => {
-  const n = randomBytes(4).readUInt32BE(0) % 1_000_000;
-  return n.toString().padStart(6, '0');
-};
-
-const getPasswordResetTokenExpiry = (): string => {
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + PASSWORD_RESET_TOKEN_EXPIRY_HOURS);
-  return expiry.toISOString();
-};
+const INVALID_CREDENTIALS_MESSAGE = 'Email or password is invalid';
+const EMAIL_NOT_VERIFIED_MESSAGE = 'Please verify your email address before logging in';
+const VERIFICATION_GENERIC_SUCCESS_MESSAGE =
+  'If this email exists, a verification link will be sent.';
+const FORGOT_PASSWORD_SUCCESS_MESSAGE =
+  'If an account with that email exists, a password reset link will be sent.';
 
 class AuthService {
-  private toUser(stored: StoredUser): User {
+  private mapStoredUserToUser(stored: StoredUser): User {
     return {
       id: stored.id,
       email: stored.email,
       displayName: stored.displayName,
       avatarUrl: stored.avatarUrl ?? undefined,
-      role: stored.role as User['role'],
+      role: stored.role,
       emailVerified: stored.emailVerified,
       createdAt:
         stored.createdAt instanceof Date ? stored.createdAt.toISOString() : String(stored.createdAt)
     };
   }
 
-  async register(payload: RegisterRequestDto) {
-    const existing = await userRepository.findByEmail(payload.email);
-
-    if (existing) {
-      throw new AppError(409, 'EMAIL_IN_USE', 'Email is already registered');
-    }
-
-    const now = new Date().toISOString();
-    const verificationToken = generateVerificationToken();
-    const verificationCode = generateVerificationCode();
-    const verificationTokenExpiresAt = getVerificationTokenExpiry();
-
-    const user: User = {
-      id: randomUUID(),
-      email: payload.email,
-      displayName: payload.displayName,
-      role: 'user',
-      emailVerified: false,
-      createdAt: now
-    };
-
-    const passwordHash = await hashPassword(payload.password);
-    const createdUser = await userRepository.create({
-      ...user,
-      passwordHash,
-      verificationToken,
-      verificationCode,
-      verificationTokenExpiresAt
-    });
-
-    emailService
-      .sendVerificationEmail(payload.email, verificationToken, verificationCode, payload.displayName)
-      .catch((error) => {
-        logger.error({ error, email: payload.email }, 'Failed to send verification email');
-      });
-
-    return {
-      user: createdUser,
-      tokens: signTokens({
-        id: createdUser.id,
-        email: createdUser.email,
-        role: createdUser.role as Role
-      }),
-      message: 'Registration successful. Please check your email to verify your account.'
-    };
-  }
-
-  async login(payload: LoginRequestDto) {
-    const existing = await userRepository.findByEmail(payload.email);
-
-    if (!existing) {
-      throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid');
-    }
-
-    const matched = await comparePassword(payload.password, existing.passwordHash);
-
-    if (!matched) {
-      throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid');
-    }
-
-    if (!existing.emailVerified) {
-      throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email address before logging in');
-    }
-
-    const user = this.toUser(existing);
-
+  private createSessionResponse(user: User, message?: string) {
     return {
       user,
       tokens: signTokens({
         id: user.id,
         email: user.email,
         role: user.role
-      })
+      }),
+      ...(message ? { message } : {})
     };
+  }
+
+  private ensureEmailIsVerified(user: Pick<StoredUser, 'emailVerified'>) {
+    if (!user.emailVerified) {
+      throw new AppError(403, 'EMAIL_NOT_VERIFIED', EMAIL_NOT_VERIFIED_MESSAGE);
+    }
+  }
+
+  private ensureTokenNotExpired(expiresAt: string | null | undefined, expirationMessage: string) {
+    if (!expiresAt) return;
+    if (new Date(expiresAt) < new Date()) {
+      throw new AppError(400, 'TOKEN_EXPIRED', expirationMessage);
+    }
+  }
+
+  private async findUserByVerificationProof(payload: VerifyEmailRequestDto) {
+    if (payload.code) {
+      return userRepository.findByVerificationCode(payload.code);
+    }
+    if (payload.token) {
+      return userRepository.findByVerificationToken(payload.token);
+    }
+    return null;
+  }
+
+  private async findUserByPasswordResetProof(payload: ResetPasswordRequestDto) {
+    if (payload.code) {
+      return userRepository.findByPasswordResetCode(payload.code);
+    }
+    if (payload.token) {
+      return userRepository.findByPasswordResetToken(payload.token);
+    }
+    return null;
+  }
+
+  async register(payload: RegisterRequestDto) {
+    const existing = await userRepository.findByEmail(payload.email);
+    if (existing) {
+      throw new AppError(409, 'EMAIL_IN_USE', 'Email is already registered');
+    }
+
+    const passwordHash = await hashPassword(payload.password);
+    const verificationArtifacts = createVerificationArtifacts();
+
+    const createdUser = await userRepository.create({
+      id: randomUUID(),
+      email: payload.email,
+      displayName: payload.displayName,
+      role: 'user',
+      emailVerified: false,
+      passwordHash,
+      ...verificationArtifacts
+    });
+
+    emailService
+      .sendVerificationEmail(
+        payload.email,
+        verificationArtifacts.verificationToken,
+        verificationArtifacts.verificationCode,
+        payload.displayName
+      )
+      .catch((error) => {
+        logger.error({ error, email: payload.email }, 'Failed to send verification email');
+      });
+
+    return this.createSessionResponse(
+      createdUser,
+      'Registration successful. Please check your email to verify your account.'
+    );
+  }
+
+  async login(payload: LoginRequestDto) {
+    const existing = await userRepository.findByEmail(payload.email);
+    if (!existing) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', INVALID_CREDENTIALS_MESSAGE);
+    }
+
+    const matched = await comparePassword(payload.password, existing.passwordHash);
+    if (!matched) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', INVALID_CREDENTIALS_MESSAGE);
+    }
+
+    this.ensureEmailIsVerified(existing);
+    return this.createSessionResponse(this.mapStoredUserToUser(existing));
   }
 
   async refreshSession(refreshToken: string) {
@@ -152,39 +147,20 @@ class AuthService {
       throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid');
     }
 
-    if (!existing.emailVerified) {
-      throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email address before logging in');
-    }
-
-    const user = this.toUser(existing);
-
-    return {
-      user,
-      tokens: signTokens({
-        id: user.id,
-        email: user.email,
-        role: user.role
-      })
-    };
+    this.ensureEmailIsVerified(existing);
+    return this.createSessionResponse(this.mapStoredUserToUser(existing));
   }
 
   async verifyEmail(payload: VerifyEmailRequestDto) {
-    let user = null;
-    if (payload.code) {
-      user = await userRepository.findByVerificationCode(payload.code);
-    } else if (payload.token) {
-      user = await userRepository.findByVerificationToken(payload.token);
-    }
+    const user = await this.findUserByVerificationProof(payload);
     if (!user) {
       throw new AppError(400, 'INVALID_TOKEN', 'Verification token is invalid or has expired');
     }
 
-    if (user.verificationTokenExpiresAt) {
-      const expiresAt = new Date(user.verificationTokenExpiresAt);
-      if (expiresAt < new Date()) {
-        throw new AppError(400, 'TOKEN_EXPIRED', 'Verification token has expired. Please request a new one.');
-      }
-    }
+    this.ensureTokenNotExpired(
+      user.verificationTokenExpiresAt,
+      'Verification token has expired. Please request a new one.'
+    );
 
     const verifiedUser = await userRepository.setEmailVerified(user.id);
 
@@ -194,92 +170,78 @@ class AuthService {
 
     logger.info({ userId: user.id, email: user.email }, 'Email verified successfully');
 
-    return {
-      user: verifiedUser,
-      tokens: signTokens({
-        id: verifiedUser.id,
-        email: verifiedUser.email,
-        role: verifiedUser.role as Role
-      }),
-      message: 'Email verified successfully. You can now access your account.'
-    };
+    return this.createSessionResponse(
+      verifiedUser,
+      'Email verified successfully. You can now access your account.'
+    );
   }
 
   async resendVerificationEmail(email: string) {
     const user = await userRepository.findByEmail(email);
 
     if (!user) {
-      return { message: 'If this email exists, a verification link will be sent.' };
+      return { message: VERIFICATION_GENERIC_SUCCESS_MESSAGE };
     }
 
     if (user.emailVerified) {
       throw new AppError(400, 'ALREADY_VERIFIED', 'Email is already verified');
     }
 
-    const verificationToken = generateVerificationToken();
-    const verificationCode = generateVerificationCode();
-    const verificationTokenExpiresAt = getVerificationTokenExpiry();
+    const verificationArtifacts = createVerificationArtifacts();
 
-    await userRepository.update(user.id, {
-      verificationToken,
-      verificationCode,
-      verificationTokenExpiresAt
-    });
+    await userRepository.update(user.id, verificationArtifacts);
 
-    await emailService.sendVerificationEmail(email, verificationToken, verificationCode, user.displayName);
+    await emailService.sendVerificationEmail(
+      email,
+      verificationArtifacts.verificationToken,
+      verificationArtifacts.verificationCode,
+      user.displayName
+    );
 
-    return { message: 'If this email exists, a verification link will be sent.' };
+    return { message: VERIFICATION_GENERIC_SUCCESS_MESSAGE };
   }
 
   async forgotPassword(payload: ForgotPasswordRequestDto) {
     const user = await userRepository.findByEmail(payload.email);
 
-    // Always return success message to prevent email enumeration
-    const successMessage = 'If an account with that email exists, a password reset link will be sent.';
-
     if (!user) {
-      return { message: successMessage };
+      return { message: FORGOT_PASSWORD_SUCCESS_MESSAGE };
     }
 
-    const passwordResetToken = generatePasswordResetToken();
-    const passwordResetCode = generatePasswordResetCode();
-    const passwordResetTokenExpiresAt = getPasswordResetTokenExpiry();
+    const resetArtifacts = createPasswordResetArtifacts();
 
-    await userRepository.update(user.id, {
-      passwordResetToken,
-      passwordResetCode,
-      passwordResetTokenExpiresAt
-    });
+    await userRepository.update(user.id, resetArtifacts);
 
     emailService
-      .sendPasswordResetEmail(payload.email, passwordResetToken, passwordResetCode, user.displayName)
+      .sendPasswordResetEmail(
+        payload.email,
+        resetArtifacts.passwordResetToken,
+        resetArtifacts.passwordResetCode,
+        user.displayName
+      )
       .catch((error) => {
         logger.error({ error, email: payload.email }, 'Failed to send password reset email');
       });
 
     logger.info({ userId: user.id, email: user.email }, 'Password reset email requested');
 
-    return { message: successMessage };
+    return { message: FORGOT_PASSWORD_SUCCESS_MESSAGE };
   }
 
   async resetPassword(payload: ResetPasswordRequestDto) {
-    let user = null;
-    if (payload.code) {
-      user = await userRepository.findByPasswordResetCode(payload.code);
-    } else if (payload.token) {
-      user = await userRepository.findByPasswordResetToken(payload.token);
-    }
-
+    const user = await this.findUserByPasswordResetProof(payload);
     if (!user) {
-      throw new AppError(400, 'INVALID_TOKEN', 'Password reset token or code is invalid or has expired');
+      throw new AppError(
+        400,
+        'INVALID_TOKEN',
+        'Password reset token or code is invalid or has expired'
+      );
     }
 
-    if (user.passwordResetTokenExpiresAt) {
-      const expiresAt = new Date(user.passwordResetTokenExpiresAt);
-      if (expiresAt < new Date()) {
-        throw new AppError(400, 'TOKEN_EXPIRED', 'Password reset token has expired. Please request a new one.');
-      }
-    }
+    this.ensureTokenNotExpired(
+      user.passwordResetTokenExpiresAt,
+      'Password reset token has expired. Please request a new one.'
+    );
 
     const passwordHash = await hashPassword(payload.password);
 
@@ -292,7 +254,10 @@ class AuthService {
 
     logger.info({ userId: user.id, email: user.email }, 'Password reset successfully');
 
-    return { message: 'Your password has been reset successfully. You can now log in with your new password.' };
+    return {
+      message:
+        'Your password has been reset successfully. You can now log in with your new password.'
+    };
   }
 }
 

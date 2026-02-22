@@ -30,12 +30,7 @@ function VMark({ size }: { size: number }) {
   );
 }
 
-
-export function VibeLineLogo({
-  size = 'md',
-  variant = 'dark',
-  className
-}: VibeLineLogoProps) {
+export function VibeLineLogo({ size = 'md', variant = 'dark', className }: VibeLineLogoProps) {
   const { box, icon } = sizeMap[size];
 
   const boxClasses =

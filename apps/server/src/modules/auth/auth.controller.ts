@@ -23,9 +23,67 @@ import {
   verifyEmailSchema
 } from './auth.schema';
 
+type OAuthProvider = 'google' | 'github';
+type OAuthCallbackQuery = {
+  code?: string;
+  error?: string;
+  state?: string;
+};
+
 const getOAuthCallbackErrorUrl = (errorCode: string) => {
   const params = new URLSearchParams({ error: errorCode });
   return `${env.APP_URL}/auth/callback?${params.toString()}`;
+};
+
+const redirectWithAccessToken = (
+  reply: FastifyReply,
+  payload: { accessToken: string; refreshToken: string }
+) => {
+  reply.header('Set-Cookie', buildRefreshTokenCookie(payload.refreshToken));
+  const params = new URLSearchParams({ token: payload.accessToken });
+  return reply.redirect(`${env.APP_URL}/auth/callback?${params.toString()}`);
+};
+
+const validateOAuthQuery = (query: OAuthCallbackQuery): string | null => {
+  if (query.error) return 'oauth_denied';
+  if (!query.code) return 'oauth_no_code';
+  if (!query.state) return 'oauth_invalid_state';
+  return null;
+};
+
+const handleOAuthCallback = async (
+  provider: OAuthProvider,
+  query: OAuthCallbackQuery,
+  reply: FastifyReply
+) => {
+  const validationError = validateOAuthQuery(query);
+  if (validationError) {
+    if (query.error) {
+      logger.warn({ error: query.error, provider }, `${provider} OAuth error`);
+    }
+    return reply.redirect(getOAuthCallbackErrorUrl(validationError));
+  }
+
+  try {
+    verifyOAuthState(query.state!, provider);
+  } catch (error) {
+    logger.warn({ error, provider }, `Invalid ${provider} OAuth state`);
+    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
+  }
+
+  try {
+    const result =
+      provider === 'google'
+        ? await oauthService.handleGoogleCallback(query.code!)
+        : await oauthService.handleGithubCallback(query.code!);
+    return redirectWithAccessToken(reply, {
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken
+    });
+  } catch (error) {
+    logger.error({ error, provider }, `${provider} OAuth callback failed`);
+    return reply.redirect(getOAuthCallbackErrorUrl('oauth_failed'));
+  }
 };
 
 const sendAuthResponse = (
@@ -116,44 +174,10 @@ export const googleAuthHandler = async (_request: FastifyRequest, reply: Fastify
 };
 
 export const googleCallbackHandler = async (
-  request: FastifyRequest<{ Querystring: { code?: string; error?: string; state?: string } }>,
+  request: FastifyRequest<{ Querystring: OAuthCallbackQuery }>,
   reply: FastifyReply
 ) => {
-  const { code, error, state } = request.query;
-
-  if (error) {
-    logger.warn({ error }, 'Google OAuth error');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_denied'));
-  }
-
-  if (!code) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_no_code'));
-  }
-
-  if (!state) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    verifyOAuthState(state, 'google');
-  } catch (err) {
-    logger.warn({ error: err }, 'Invalid Google OAuth state');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    const result = await oauthService.handleGoogleCallback(code);
-    reply.header('Set-Cookie', buildRefreshTokenCookie(result.tokens.refreshToken));
-
-    const params = new URLSearchParams({
-      token: result.tokens.accessToken
-    });
-
-    return reply.redirect(`${env.APP_URL}/auth/callback?${params.toString()}`);
-  } catch (err) {
-    logger.error({ error: err }, 'Google OAuth callback failed');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_failed'));
-  }
+  return handleOAuthCallback('google', request.query, reply);
 };
 
 export const githubAuthHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
@@ -168,42 +192,8 @@ export const githubAuthHandler = async (_request: FastifyRequest, reply: Fastify
 };
 
 export const githubCallbackHandler = async (
-  request: FastifyRequest<{ Querystring: { code?: string; error?: string; state?: string } }>,
+  request: FastifyRequest<{ Querystring: OAuthCallbackQuery }>,
   reply: FastifyReply
 ) => {
-  const { code, error, state } = request.query;
-
-  if (error) {
-    logger.warn({ error }, 'GitHub OAuth error');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_denied'));
-  }
-
-  if (!code) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_no_code'));
-  }
-
-  if (!state) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    verifyOAuthState(state, 'github');
-  } catch (err) {
-    logger.warn({ error: err }, 'Invalid GitHub OAuth state');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    const result = await oauthService.handleGithubCallback(code);
-    reply.header('Set-Cookie', buildRefreshTokenCookie(result.tokens.refreshToken));
-
-    const params = new URLSearchParams({
-      token: result.tokens.accessToken
-    });
-
-    return reply.redirect(`${env.APP_URL}/auth/callback?${params.toString()}`);
-  } catch (err) {
-    logger.error({ error: err }, 'GitHub OAuth callback failed');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_failed'));
-  }
+  return handleOAuthCallback('github', request.query, reply);
 };

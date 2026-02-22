@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Card, VibeLineLogo } from '@vibeline/ui';
 
 import { AuthGuard } from '@/src/components/auth/auth-guard';
-import { apiClient } from '@/src/lib/api-client';
+import { authApi } from '@/src/features/auth';
 import { useAuthStore } from '@/src/store/auth.store';
 
 const HomePage = () => {
@@ -18,7 +18,7 @@ const HomePage = () => {
   const onLogout = async () => {
     setLoggingOut(true);
     try {
-      await apiClient('/auth/logout', { method: 'POST' });
+      await authApi.logout();
     } catch {
       // Ignore network errors and clear local auth state anyway.
     } finally {
@@ -35,7 +35,9 @@ const HomePage = () => {
           <VibeLineLogo size="md" />
           <div>
             <p className="text-sm text-content-secondary">Authentication Starter</p>
-            <h1 className="text-2xl font-semibold text-content-primary">Portfolio-Ready Auth Base</h1>
+            <h1 className="text-2xl font-semibold text-content-primary">
+              Portfolio-Ready Auth Base
+            </h1>
           </div>
         </div>
 
@@ -54,10 +56,15 @@ const HomePage = () => {
           <Card>
             <p className="text-sm text-content-secondary">What is included</p>
             <p className="mt-2 text-sm text-content-primary">
-              Login, registration, email verification, refresh token rotation, password reset, OAuth callbacks,
-              protected route guard, and `/users/me`.
+              Login, registration, email verification, refresh token rotation, password reset, OAuth
+              callbacks, protected route guard, and `/users/me`.
             </p>
-            <Button className="mt-6 w-full" variant="secondary" onClick={onLogout} disabled={loggingOut}>
+            <Button
+              className="mt-6 w-full"
+              variant="secondary"
+              onClick={onLogout}
+              disabled={loggingOut}
+            >
               {loggingOut ? 'Signing out...' : 'Sign out'}
             </Button>
           </Card>

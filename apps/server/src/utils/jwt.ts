@@ -33,7 +33,12 @@ type OAuthStatePayload = {
 
 export const signTokens = (user: JwtUserPayload): AuthTokens => ({
   accessToken: jwt.sign(
-    { sub: user.id, email: user.email, role: user.role, type: 'access' } satisfies AccessTokenPayload,
+    {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      type: 'access'
+    } satisfies AccessTokenPayload,
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   ),
@@ -59,11 +64,9 @@ export const verifyRefreshToken = (token: string): { userId: string; role: Role 
 };
 
 export const signOAuthState = (provider: OAuthProvider): string => {
-  return jwt.sign(
-    { provider, type: 'oauth_state' } satisfies OAuthStatePayload,
-    env.JWT_SECRET,
-    { expiresIn: '10m' }
-  );
+  return jwt.sign({ provider, type: 'oauth_state' } satisfies OAuthStatePayload, env.JWT_SECRET, {
+    expiresIn: '10m'
+  });
 };
 
 export const verifyOAuthState = (state: string, provider: OAuthProvider): void => {

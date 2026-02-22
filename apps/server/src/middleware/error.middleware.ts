@@ -5,7 +5,10 @@ import { env } from '@/config/env';
 
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
 
-const setCorsHeaders = (request: { headers: { origin?: string } }, reply: { header: (name: string, value: string) => void }) => {
+const setCorsHeaders = (
+  request: { headers: { origin?: string } },
+  reply: { header: (name: string, value: string) => void }
+) => {
   const origin = request.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
     reply.header('Access-Control-Allow-Origin', origin);

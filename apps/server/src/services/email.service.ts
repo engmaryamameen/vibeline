@@ -158,7 +158,12 @@ If you didn't create an account, you can safely ignore this email.
     });
   }
 
-  async sendPasswordResetEmail(email: string, token: string, resetCode: string, displayName: string): Promise<boolean> {
+  async sendPasswordResetEmail(
+    email: string,
+    token: string,
+    resetCode: string,
+    displayName: string
+  ): Promise<boolean> {
     const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
 
     const html = `

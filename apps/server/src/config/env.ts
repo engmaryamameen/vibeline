@@ -20,7 +20,7 @@ const envSchema = z.object({
     .default('false'),
   INVITE_FROM_EMAIL: z.string().email(),
 
-  APP_URL: z.string().url().default('http://localhost:3000'),
+  APP_URL: z.string().url().default('http://localhost:3002'),
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().optional(),
