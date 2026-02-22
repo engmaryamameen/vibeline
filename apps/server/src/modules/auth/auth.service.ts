@@ -4,7 +4,8 @@ import type { User } from '@vibeline/types';
 
 import { AppError } from '@/common/errors/app-error';
 import { logger } from '@/config/logger';
-import { userRepository, type StoredUser } from '@/repositories/user.repository';
+import { mapStoredUserToPublicUser, type StoredUser } from '@/modules/user/user.mapper';
+import { userRepository } from '@/repositories/user.repository';
 import { emailService } from '@/services/email.service';
 import { comparePassword, hashPassword } from '@/utils/hash';
 import { signTokens, verifyRefreshToken } from '@/utils/jwt';
@@ -26,19 +27,6 @@ const FORGOT_PASSWORD_SUCCESS_MESSAGE =
   'If an account with that email exists, a password reset link will be sent.';
 
 class AuthService {
-  private mapStoredUserToUser(stored: StoredUser): User {
-    return {
-      id: stored.id,
-      email: stored.email,
-      displayName: stored.displayName,
-      avatarUrl: stored.avatarUrl ?? undefined,
-      role: stored.role,
-      emailVerified: stored.emailVerified,
-      createdAt:
-        stored.createdAt instanceof Date ? stored.createdAt.toISOString() : String(stored.createdAt)
-    };
-  }
-
   private createSessionResponse(user: User, message?: string) {
     return {
       user,
@@ -54,6 +42,12 @@ class AuthService {
   private ensureEmailIsVerified(user: Pick<StoredUser, 'emailVerified'>) {
     if (!user.emailVerified) {
       throw new AppError(403, 'EMAIL_NOT_VERIFIED', EMAIL_NOT_VERIFIED_MESSAGE);
+    }
+  }
+
+  private ensurePasswordLoginEnabled(user: Pick<StoredUser, 'passwordHash'>) {
+    if (!user.passwordHash) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', INVALID_CREDENTIALS_MESSAGE);
     }
   }
 
@@ -115,7 +109,7 @@ class AuthService {
       });
 
     return this.createSessionResponse(
-      createdUser,
+      mapStoredUserToPublicUser(createdUser),
       'Registration successful. Please check your email to verify your account.'
     );
   }
@@ -126,13 +120,15 @@ class AuthService {
       throw new AppError(401, 'INVALID_CREDENTIALS', INVALID_CREDENTIALS_MESSAGE);
     }
 
+    this.ensurePasswordLoginEnabled(existing);
+
     const matched = await comparePassword(payload.password, existing.passwordHash);
     if (!matched) {
       throw new AppError(401, 'INVALID_CREDENTIALS', INVALID_CREDENTIALS_MESSAGE);
     }
 
     this.ensureEmailIsVerified(existing);
-    return this.createSessionResponse(this.mapStoredUserToUser(existing));
+    return this.createSessionResponse(mapStoredUserToPublicUser(existing));
   }
 
   async refreshSession(refreshToken: string) {
@@ -148,7 +144,7 @@ class AuthService {
     }
 
     this.ensureEmailIsVerified(existing);
-    return this.createSessionResponse(this.mapStoredUserToUser(existing));
+    return this.createSessionResponse(mapStoredUserToPublicUser(existing));
   }
 
   async verifyEmail(payload: VerifyEmailRequestDto) {
@@ -171,7 +167,7 @@ class AuthService {
     logger.info({ userId: user.id, email: user.email }, 'Email verified successfully');
 
     return this.createSessionResponse(
-      verifiedUser,
+      mapStoredUserToPublicUser(verifiedUser),
       'Email verified successfully. You can now access your account.'
     );
   }

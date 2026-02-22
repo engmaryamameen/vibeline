@@ -1,4 +1,5 @@
 import { AppError } from '@/common/errors/app-error';
+import { mapStoredUserToPublicUser } from '@/modules/user/user.mapper';
 import { userRepository } from '@/repositories/user.repository';
 
 class UserService {
@@ -9,8 +10,7 @@ class UserService {
       throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
     }
 
-    const { passwordHash: _, ...profile } = user;
-    return profile;
+    return mapStoredUserToPublicUser(user);
   }
 }
 

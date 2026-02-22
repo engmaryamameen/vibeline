@@ -4,6 +4,7 @@ import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEve
 import { useRouter } from 'next/navigation';
 
 import { authApi } from '../api';
+import { getErrorMessage } from '../error-utils';
 
 const CODE_LENGTH = 6;
 
@@ -27,7 +28,7 @@ export const useForgotPassword = () => {
       await authApi.forgotPassword(email);
       setSuccess(true);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to process request');
+      setError(getErrorMessage(submitError, 'Unable to process request'));
     } finally {
       setLoading(false);
     }

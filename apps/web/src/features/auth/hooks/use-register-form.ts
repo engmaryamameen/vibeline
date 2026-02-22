@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-
 import { authApi } from '../api';
+import { getErrorMessage } from '../error-utils';
+import { useDelayedRedirect } from './use-delayed-redirect';
 
 export const useRegisterForm = () => {
-  const router = useRouter();
+  const { scheduleReplace } = useDelayedRedirect();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,9 +25,9 @@ export const useRegisterForm = () => {
     try {
       await authApi.register(displayName, email, password);
       setSuccess(true);
-      setTimeout(() => router.replace('/verify-email'), 2500);
+      scheduleReplace('/verify-email', 2500);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to register');
+      setError(getErrorMessage(submitError, 'Unable to register'));
     } finally {
       setLoading(false);
     }

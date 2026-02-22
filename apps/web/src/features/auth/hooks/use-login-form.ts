@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/src/store/auth.store';
 
 import { authApi } from '../api';
-import { ApiError } from '@/src/lib/api-client';
+import { getApiErrorCode, getErrorMessage } from '../error-utils';
 
 export const useLoginForm = () => {
   const router = useRouter();
@@ -40,12 +40,8 @@ export const useLoginForm = () => {
       });
       router.replace('/');
     } catch (submitError) {
-      if (submitError instanceof ApiError) {
-        setError(submitError.message);
-        setErrorCode(submitError.code ?? null);
-      } else {
-        setError(submitError instanceof Error ? submitError.message : 'Unable to sign in');
-      }
+      setError(getErrorMessage(submitError, 'Unable to sign in'));
+      setErrorCode(getApiErrorCode(submitError));
     } finally {
       setLoading(false);
     }

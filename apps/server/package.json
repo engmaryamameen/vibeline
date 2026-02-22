@@ -9,6 +9,7 @@
     "start": "node dist/server.cjs",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test $(find tests -name '*.test.ts')",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts"

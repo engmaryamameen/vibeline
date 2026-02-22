@@ -4,7 +4,8 @@ import type { Role } from '@vibeline/types';
 
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
-import { userRepository, type StoredUser } from '@/repositories/user.repository';
+import { type StoredUser } from '@/modules/user/user.mapper';
+import { userRepository } from '@/repositories/user.repository';
 import { signTokens } from '@/utils/jwt';
 
 type OAuthAuthResult = {
@@ -50,6 +51,8 @@ type GithubEmail = {
   primary: boolean;
   verified: boolean;
 };
+
+const OAUTH_PASSWORD_PLACEHOLDER_HASH = '';
 
 class OAuthService {
   getGoogleAuthUrl(state?: string): string {
@@ -269,7 +272,7 @@ class OAuthService {
         avatarUrl: payload.avatarUrl,
         role: 'user',
         emailVerified: true,
-        passwordHash: ''
+        passwordHash: OAUTH_PASSWORD_PLACEHOLDER_HASH
       });
 
       user = await userRepository.findByEmail(payload.email);

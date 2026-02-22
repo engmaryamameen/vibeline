@@ -1,21 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-import { ApiError } from '@/src/lib/api-client';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/src/store/auth.store';
 
 import { authApi } from '../api';
+import { getErrorMessage } from '../error-utils';
 import type { AuthSessionResponse } from '../types';
+import { useDelayedRedirect } from './use-delayed-redirect';
 
 type VerificationState = 'loading' | 'success' | 'error' | 'no-token';
 
 export const useVerifyEmail = () => {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const setSession = useAuthStore((state) => state.setSession);
+  const { scheduleReplace } = useDelayedRedirect();
 
   const [state, setState] = useState<VerificationState>(token ? 'loading' : 'no-token');
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +24,9 @@ export const useVerifyEmail = () => {
     (response: AuthSessionResponse) => {
       setSession({ token: response.tokens.accessToken, currentUser: response.user });
       setState('success');
-      setTimeout(() => router.replace('/'), 2000);
+      scheduleReplace('/', 2000);
     },
-    [router, setSession]
+    [scheduleReplace, setSession]
   );
 
   useEffect(() => {
@@ -41,11 +41,7 @@ export const useVerifyEmail = () => {
         handleSuccess(response);
       } catch (verifyError) {
         setState('error');
-        if (verifyError instanceof ApiError) {
-          setError(verifyError.message);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
+        setError(getErrorMessage(verifyError, 'An unexpected error occurred. Please try again.'));
       }
     };
 
@@ -58,11 +54,7 @@ export const useVerifyEmail = () => {
         const response = await authApi.verifyEmail({ code });
         handleSuccess(response);
       } catch (verifyError) {
-        if (verifyError instanceof ApiError) {
-          setError(verifyError.message);
-        } else {
-          setError('Verification failed. Please try again.');
-        }
+        setError(getErrorMessage(verifyError, 'Verification failed. Please try again.'));
         throw verifyError;
       }
     },

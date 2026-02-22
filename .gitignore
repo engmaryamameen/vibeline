@@ -2,6 +2,7 @@
 node_modules
 
 desigining-flow.md
+coding-practices.md
 # env
 .env
 .env.*

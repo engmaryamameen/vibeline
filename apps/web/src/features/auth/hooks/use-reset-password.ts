@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-import { ApiError } from '@/src/lib/api-client';
+import { useSearchParams } from 'next/navigation';
 
 import { authApi } from '../api';
+import { getErrorMessage } from '../error-utils';
+import { useDelayedRedirect } from './use-delayed-redirect';
 
 export const useResetPassword = () => {
-  const router = useRouter();
+  const { scheduleReplace } = useDelayedRedirect();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const code = searchParams.get('code');
@@ -46,15 +46,9 @@ export const useResetPassword = () => {
     try {
       await authApi.resetPassword(token ? { token, password } : { code: code!, password });
       setSuccess(true);
-      setTimeout(() => {
-        router.replace('/login');
-      }, 3000);
+      scheduleReplace('/login', 3000);
     } catch (submitError) {
-      if (submitError instanceof ApiError) {
-        setError(submitError.message);
-      } else {
-        setError(submitError instanceof Error ? submitError.message : 'Unable to reset password');
-      }
+      setError(getErrorMessage(submitError, 'Unable to reset password'));
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ../server/node_modules/tsx/dist/loader.mjs --test $(find tests -name '*.test.ts')"
   },
   "dependencies": {
     "@vibeline/types": "workspace:*",

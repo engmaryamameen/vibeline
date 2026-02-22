@@ -1,105 +1,46 @@
-import type { Role, User } from '@vibeline/types';
 import { eq } from 'drizzle-orm';
-import type { InferSelectModel } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
-
-export type StoredUser = {
-  id: string;
-  email: string;
-  displayName: string;
-  avatarUrl: string | null;
-  role: Role;
-  emailVerified: boolean;
-  passwordHash: string;
-  verificationToken?: string | null;
-  verificationCode?: string | null;
-  verificationTokenExpiresAt?: string | null;
-  passwordResetToken?: string | null;
-  passwordResetCode?: string | null;
-  passwordResetTokenExpiresAt?: string | null;
-  createdAt: Date | string;
-};
-
-const toStoredUser = (row: InferSelectModel<typeof users>): StoredUser => ({
-  ...row,
-  role: row.role as Role,
-  avatarUrl: row.avatarUrl ?? null,
-  verificationToken: row.verificationToken ?? undefined,
-  verificationTokenExpiresAt:
-    row.verificationTokenExpiresAt != null
-      ? row.verificationTokenExpiresAt instanceof Date
-        ? row.verificationTokenExpiresAt.toISOString()
-        : String(row.verificationTokenExpiresAt)
-      : undefined,
-  passwordResetToken: row.passwordResetToken ?? undefined,
-  passwordResetCode: row.passwordResetCode ?? undefined,
-  passwordResetTokenExpiresAt:
-    row.passwordResetTokenExpiresAt != null
-      ? row.passwordResetTokenExpiresAt instanceof Date
-        ? row.passwordResetTokenExpiresAt.toISOString()
-        : String(row.passwordResetTokenExpiresAt)
-      : undefined
-});
-
-const toPublicUser = (stored: StoredUser): User => {
-  const {
-    passwordHash: _,
-    verificationToken: __,
-    verificationTokenExpiresAt: ___,
-    passwordResetToken: ____,
-    passwordResetCode: _____,
-    passwordResetTokenExpiresAt: ______,
-    ...user
-  } = stored;
-  return {
-    ...user,
-    avatarUrl: user.avatarUrl ?? undefined,
-    role: user.role,
-    emailVerified: user.emailVerified ?? false,
-    createdAt:
-      user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt)
-  };
-};
+import { mapUserRowToStoredUser, type StoredUser } from '@/modules/user/user.mapper';
 
 class UserRepository {
   async findByEmail(email: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({ where: eq(users.email, email) });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async findById(id: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({ where: eq(users.id, id) });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async findByVerificationToken(token: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({
       where: eq(users.verificationToken, token)
     });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async findByVerificationCode(code: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({
       where: eq(users.verificationCode, code)
     });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async findByPasswordResetToken(token: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({
       where: eq(users.passwordResetToken, token)
     });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async findByPasswordResetCode(code: string): Promise<StoredUser | null> {
     const row = await db.query.users.findFirst({
       where: eq(users.passwordResetCode, code)
     });
-    return row ? toStoredUser(row) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
   async create(
@@ -107,7 +48,7 @@ class UserRepository {
       createdAt?: string;
       avatarUrl?: string | null;
     }
-  ): Promise<User> {
+  ): Promise<StoredUser> {
     const [row] = await db
       .insert(users)
       .values({
@@ -132,10 +73,10 @@ class UserRepository {
       .returning();
 
     if (!row) throw new Error('Failed to create user');
-    return toPublicUser(toStoredUser(row));
+    return mapUserRowToStoredUser(row);
   }
 
-  async update(id: string, updates: Partial<StoredUser>): Promise<User | null> {
+  async update(id: string, updates: Partial<StoredUser>): Promise<StoredUser | null> {
     const payload: Record<string, unknown> = {};
 
     if (updates.email !== undefined) payload.email = updates.email;
@@ -162,10 +103,10 @@ class UserRepository {
 
     const [row] = await db.update(users).set(payload).where(eq(users.id, id)).returning();
 
-    return row ? toPublicUser(toStoredUser(row)) : null;
+    return row ? mapUserRowToStoredUser(row) : null;
   }
 
-  async setEmailVerified(id: string): Promise<User | null> {
+  async setEmailVerified(id: string): Promise<StoredUser | null> {
     return this.update(id, {
       emailVerified: true,
       verificationToken: undefined,
