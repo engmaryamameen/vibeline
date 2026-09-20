@@ -1,0 +1,12 @@
+{
+  "name": "@vibeline/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/next": "./tsconfig/next.json",
+    "./tsconfig/node": "./tsconfig/node.json",
+    "./eslint/base": "./eslint/base.cjs",
+    "./prettier": "./prettier/base.cjs"
+  }
+}

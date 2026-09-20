@@ -1,0 +1,140 @@
+/**
+ * Söhne – Klim Type Foundry
+ * Local font declarations for app-wide use.
+ * Font files live in /public/fonts/soehne/
+ */
+
+/* Extraleicht / 200 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Extraleicht.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-ExtraleichtKursiv.otf') format('opentype');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Leicht / 300 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Leicht.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-LeichtKursiv.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Buch (Book) / 400 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Buch.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-BuchKursiv.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Kräftig / 500 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Kräftig.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-KräftigKursiv.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Halbfett / 600 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Halbfett.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-HalbfettKursiv.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Dreiviertelfett & Fett / 700 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Dreiviertelfett.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-DreiviertelfettKursiv.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Fett.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-FettKursiv.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Extrafett / 800 */
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-Extrafett.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/soehne/Söhne-ExtrafettKursiv.otf') format('opentype');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
