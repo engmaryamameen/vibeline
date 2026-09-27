@@ -1,11 +1,12 @@
-import { randomUUID } from 'crypto';
-
-import type { Role } from '@vibeline/types';
+import type { Role } from '@vibeline/contracts';
 
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
-import { userRepository, type StoredUser } from '@/repositories/user.repository';
-import { signTokens } from '@/utils/jwt';
+import { userRepository } from '@/repositories/user.repository';
+import { authIdentityRepository, type AuthProvider } from '@/repositories/auth-identity.repository';
+import { AppError } from '@/common/errors/app-error';
+import { signAccessToken } from '@/utils/jwt';
+import { sessionService } from '@/modules/auth/session.service';
 
 type OAuthAuthResult = {
   user: {
@@ -27,7 +28,9 @@ type GoogleTokenResponse = {
 };
 
 type GoogleUserInfo = {
+  sub: string;
   email: string;
+  email_verified?: boolean;
   name?: string;
   picture?: string;
 };
@@ -39,6 +42,7 @@ type GithubTokenResponse = {
 };
 
 type GithubUser = {
+  id: number;
   login: string;
   name?: string | null;
   email?: string | null;
@@ -100,7 +104,7 @@ class OAuthService {
 
     const tokens = (await tokenResponse.json()) as GoogleTokenResponse;
 
-    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    const userInfoResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
       headers: {
         Authorization: `Bearer ${tokens.access_token}`
       }
@@ -119,8 +123,10 @@ class OAuthService {
     }
 
     return this.findOrCreateOAuthUser({
-      provider: 'Google',
-      email: googleUser.email,
+      provider: 'google',
+      providerSubject: googleUser.sub,
+      email: googleUser.email.trim().toLowerCase(),
+      emailVerified: googleUser.email_verified === true,
       displayName: googleUser.name || this.getDefaultDisplayName(googleUser.email),
       avatarUrl: googleUser.picture || null
     });
@@ -191,16 +197,17 @@ class OAuthService {
     }
 
     const githubUser = (await userResponse.json()) as GithubUser;
-    const githubEmail = await this.getGithubEmail(tokenPayload.access_token);
-    const email = githubUser.email || githubEmail;
+    const email = await this.getGithubEmail(tokenPayload.access_token);
 
     if (!email) {
       throw new Error('GitHub account does not expose an email address');
     }
 
     return this.findOrCreateOAuthUser({
-      provider: 'GitHub',
-      email,
+      provider: 'github',
+      providerSubject: String(githubUser.id),
+      email: email.trim().toLowerCase(),
+      emailVerified: true,
       displayName: githubUser.name || githubUser.login || this.getDefaultDisplayName(email),
       avatarUrl: githubUser.avatar_url || null
     });
@@ -230,75 +237,34 @@ class OAuthService {
   }
 
   private async findOrCreateOAuthUser(payload: {
-    provider: 'Google' | 'GitHub';
+    provider: AuthProvider;
+    providerSubject: string;
     email: string;
+    emailVerified: boolean;
     displayName: string;
     avatarUrl: string | null;
   }): Promise<OAuthAuthResult> {
-    let user = await userRepository.findByEmail(payload.email);
+    if (!payload.emailVerified) throw new AppError(403, 'OAUTH_EMAIL_UNVERIFIED', 'A verified provider email is required');
 
-    if (user) {
-      const updates: Partial<StoredUser> = {};
-
-      if (!user.avatarUrl && payload.avatarUrl) {
-        updates.avatarUrl = payload.avatarUrl;
-      }
-
-      if (!user.emailVerified) {
-        updates.emailVerified = true;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await userRepository.update(user.id, updates);
-        user = await userRepository.findByEmail(payload.email);
-      }
-
-      if (!user) {
-        throw new Error('Failed to update OAuth user');
-      }
-
-      logger.info(
-        { userId: user.id, email: user.email, provider: payload.provider },
-        'User logged in via OAuth'
-      );
+    let identity = await authIdentityRepository.findIdentity(payload.provider, payload.providerSubject);
+    let user;
+    if (identity) {
+      user = await userRepository.findById(identity.userId);
+      if (!user) throw new Error('OAuth identity references a missing user');
+      await authIdentityRepository.updateIdentityProfile(identity.id, payload.email, payload.emailVerified);
+      // Provider email is metadata. Changing it must not silently change the account's login/contact email.
+      if (!user.avatarUrl && payload.avatarUrl) await userRepository.update(user.id, { avatarUrl: payload.avatarUrl });
     } else {
-      await userRepository.create({
-        id: randomUUID(),
-        email: payload.email,
-        displayName: payload.displayName,
-        avatarUrl: payload.avatarUrl,
-        role: 'user',
-        emailVerified: true,
-        passwordHash: ''
-      });
-
-      user = await userRepository.findByEmail(payload.email);
-
-      if (!user) {
-        throw new Error('Failed to create OAuth user');
+      const result = await authIdentityRepository.createOAuthAccount(payload);
+      if (result.kind === 'email-conflict') {
+        throw new AppError(409, 'ACCOUNT_LINK_REQUIRED', 'An account with this email already exists. Sign in to that account before linking this provider.');
       }
-
-      logger.info(
-        { userId: user.id, email: user.email, provider: payload.provider },
-        'New user created via OAuth'
-      );
+      user = await userRepository.findById(result.userId);
+      if (!user) throw new Error('Failed to resolve OAuth user');
     }
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        avatarUrl: user.avatarUrl,
-        role: user.role as Role,
-        emailVerified: user.emailVerified
-      },
-      tokens: signTokens({
-        id: user.id,
-        email: user.email,
-        role: user.role as Role
-      })
-    };
+    const publicUser = { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, role: user.role as Role, emailVerified: user.emailVerified };
+    return { user: publicUser, tokens: { accessToken: signAccessToken({ id: user.id, email: user.email, role: user.role as Role }), refreshToken: await sessionService.create(user.id) } };
   }
 
   private getDefaultDisplayName(email: string): string {

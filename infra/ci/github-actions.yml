@@ -1,33 +1,45 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
-
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: vibeline_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vibeline_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vibeline_test
+      JWT_SECRET: ci-only-secret-ci-only-secret-1234567890
+      AUTH_CREDENTIAL_SECRET: ci-auth-credential-secret-1234567890
+      OAUTH_STATE_SECRET: ci-oauth-state-secret-123456789012345
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_USER: ci@example.com
+      SMTP_PASS: ci-only
+      SMTP_SECURE: 'false'
+      INVITE_FROM_EMAIL: ci@example.com
+      APP_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
+        with: { version: 9.12.3 }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Build
-        run: pnpm build
+        with: { node-version: 24.21.0, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm --filter @vibeline/server db:migrate
+      - run: pnpm --filter @vibeline/server test:integration
+      - run: pnpm build

@@ -5,18 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/server.ts",
-    "build": "tsup src/server.ts --format cjs --target node20 --clean --sourcemap",
+    "build": "tsup src/server.ts --format cjs --target node24 --clean --sourcemap",
     "start": "node dist/server.cjs",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "test:integration": "RUN_DB_TESTS=1 tsx --test test/*.integration.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
     "@fastify/jwt": "^9.0.1",
-    "@vibeline/types": "workspace:*",
+    "@vibeline/contracts": "workspace:*",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.38.2",
@@ -32,7 +33,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^22.10.1",
+    "@types/node": "^24.0.0",
     "@types/nodemailer": "^7.0.10",
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.30.1",
@@ -40,5 +41,8 @@
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=24.11 <25"
   }
 }
