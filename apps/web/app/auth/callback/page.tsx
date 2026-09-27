@@ -6,7 +6,7 @@ import { VibeLineLogo } from '@vibeline/ui';
 
 import { useAuthStore } from '@/src/store/auth.store';
 import { apiClient } from '@/src/lib/api-client';
-import type { User } from '@vibeline/types';
+import type { User } from '@vibeline/contracts';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -16,42 +16,17 @@ function AuthCallbackContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = searchParams.get('token');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
-      const errorMessages: Record<string, string> = {
-        oauth_not_configured: 'Google/GitHub sign-in is not configured',
-        oauth_denied: 'Sign-in was cancelled',
-        oauth_no_code: 'Authentication failed',
-        oauth_invalid_state: 'Authentication session expired. Please try again.',
-        oauth_failed: 'Failed to sign in with Google/GitHub'
-      };
-      setError(errorMessages[errorParam] || 'Authentication failed');
-      setIsLoading(false);
-      setTimeout(() => router.replace('/login'), 3000);
-      return;
+      setError(errorParam === 'account_link_required' ? 'An account with this email already exists. Sign in with its existing method before linking this provider.' : 'Authentication failed. Please try again.'); setIsLoading(false); setTimeout(() => router.replace('/login'), 3000); return;
     }
-
-    if (!token) {
-      setError('No authentication token received');
-      setIsLoading(false);
-      setTimeout(() => router.replace('/login'), 3000);
-      return;
-    }
-
     const initSession = async () => {
       try {
-        const { user } = await apiClient<{ user: User }>('/users/me', { token });
-        setSession({ token, currentUser: user });
-        router.replace('/');
-      } catch {
-        setError('Failed to complete sign-in');
-        setIsLoading(false);
-        setTimeout(() => router.replace('/login'), 3000);
-      }
+        const response = await apiClient<{ user: User; tokens: { accessToken: string } }>('/auth/refresh', { method: 'POST' });
+        setSession({ token: response.tokens.accessToken, currentUser: response.user }); router.replace('/');
+      } catch { setError('Failed to complete sign-in'); setIsLoading(false); setTimeout(() => router.replace('/login'), 3000); }
     };
-
     initSession();
   }, [router, searchParams, setSession]);
 

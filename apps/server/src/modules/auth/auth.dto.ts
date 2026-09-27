@@ -37,3 +37,5 @@ export interface AuthResponseDto {
   };
   message?: string;
 }
+
+export interface ChangePasswordRequestDto { currentPassword: string; newPassword: string; }
