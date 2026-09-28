@@ -10,6 +10,13 @@ export type GenerationFailureCode='AUTHORIZATION_REVOKED'|'CONVERSATION_UNAVAILA
 
 class AssistantRepository{
   getAssistant(conversationId:string){return db.query.conversationAssistants.findFirst({where:eq(conversationAssistants.conversationId,conversationId)});}
+  async getState(conversationId:string,userId:string){
+    const conversation=await db.query.conversations.findFirst({where:and(eq(conversations.id,conversationId),isNull(conversations.archivedAt))});
+    if(!conversation||!(await db.query.conversationMembers.findFirst({where:activeMembership(conversationId,userId)})))return null;
+    const assistant=await this.getAssistant(conversationId);
+    const generation=assistant?await db.query.assistantGenerations.findFirst({where:and(eq(assistantGenerations.conversationId,conversationId),eq(assistantGenerations.requestedByUserId,userId)),orderBy:[desc(assistantGenerations.createdAt)]}):undefined;
+    return {assistant,generation};
+  }
   async enableAssistant(conversationId:string,actorId:string,displayName:string){return db.transaction(async tx=>{
     await tx.execute(sql`SELECT id FROM conversations WHERE id=${conversationId} AND archived_at IS NULL FOR UPDATE`);
     const conversation=await tx.query.conversations.findFirst({where:eq(conversations.id,conversationId)});

@@ -193,6 +193,13 @@ dbTest('assistant final message uses the normal realtime publication path',async
   try{const result=await assistantService.requestResponse(ids.a,g.id,randomUUID());assert.ok(result.message);assert.equal(events.some(event=>event.type==='message.created'&&event.payload.id===result.message?.id),true);}finally{unsubscribe();}
 });
 
+dbTest('assistant state restores the latest durable generation for the requester',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant state');const assistant=await assistantService.enable(ids.a,g.id,'Helper');
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>({text:'state result',provider:'test',model:'test-model'})});
+  const requestId=randomUUID();const result=await assistantService.requestResponse(ids.b,g.id,requestId);const state=await assistantService.getState(ids.b,g.id);
+  assert.equal(state.assistant?.id,assistant.id);assert.equal(state.generation?.id,result.generation.id);assert.equal(state.generation?.status,'completed');
+});
+
 dbTest('provider invocation revalidates membership after a generation claim',async()=>{
   const { assistantRepository }=await import('../src/modules/assistant/assistant.repository');
   const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant prepare auth');await assistantService.enable(ids.a,g.id,'Helper');
