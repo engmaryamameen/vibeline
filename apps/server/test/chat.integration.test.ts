@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool } from '../src/db/client';
 import { conversationMembers, conversations, messages, users } from '../src/db/schema';
 import { chatService } from '../src/modules/chat/chat.service';
@@ -86,7 +86,7 @@ dbTest('assistant generation is durable, sequenced, and idempotent',async()=>{
   await assistantService.enable(ids.a,g.id,'Helper');
   await chatService.sendMessage(ids.a,g.id,randomUUID(),'summarize this point');
   let calls=0;
-  const gateway:ModelGateway={generate:async()=>{calls++;return {text:'A deterministic response',provider:'test',model:'test-model',inputTokens:12,outputTokens:4,totalTokens:16};}};
+  const gateway:ModelGateway={describe:()=>({provider:'test',model:'test-model'}),generate:async()=>{calls++;return {text:'A deterministic response',provider:'test',model:'test-model',inputTokens:12,outputTokens:4,totalTokens:16};}};
   assistantService.setGatewayForTests(gateway);
   const requestId=randomUUID();
   const [first,retry]=await Promise.all([assistantService.requestResponse(ids.a,g.id,requestId),assistantService.requestResponse(ids.a,g.id,requestId)]);
@@ -108,7 +108,7 @@ dbTest('assistant context respects the invoking membership visibility period',as
   await chatService.addMember(ids.a,g.id,ids.b);
   await chatService.sendMessage(ids.a,g.id,randomUUID(),'visible after rejoin');
   let context='';
-  assistantService.setGatewayForTests({generate:async({messages})=>{context=messages.map(m=>m.content).join('|');return {text:'ok',provider:'test',model:'test-model'};}});
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async({messages})=>{context=messages.map(m=>m.content).join('|');return {text:'ok',provider:'test',model:'test-model'};}});
   await assistantService.requestResponse(ids.b,g.id,randomUUID());
   assert.equal(context.includes('hidden before rejoin'),false);
   assert.equal(context.includes('visible after rejoin'),true);
@@ -118,8 +118,85 @@ dbTest('provider failure records failure without creating an assistant message',
   const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant failure');
   await assistantService.enable(ids.a,g.id,'Helper');
   const before=await chatService.listMessages(ids.a,g.id,undefined,undefined,100);
-  assistantService.setGatewayForTests({generate:async()=>{throw new Error('provider down');}});
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>{throw new Error('provider down');}});
   await assert.rejects(()=>assistantService.requestResponse(ids.a,g.id,randomUUID()),(e:any)=>e.code==='ASSISTANT_GENERATION_FAILED');
   const after=await chatService.listMessages(ids.a,g.id,undefined,undefined,100);
   assert.equal(after.length,before.length);
+});
+
+dbTest('assistant result is rejected when requester is removed while provider is running',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant revoke');
+  await assistantService.enable(ids.a,g.id,'Helper');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>{await gate;return {text:'must not persist',provider:'test',model:'test-model'};}});
+  const request=assistantService.requestResponse(ids.b,g.id,randomUUID());
+  await new Promise(resolve=>setTimeout(resolve,10));
+  await chatService.removeMember(ids.a,g.id,ids.b);release();
+  await assert.rejects(()=>request,(e:any)=>e.code==='ASSISTANT_GENERATION_FAILED');
+  const visible=await chatService.listMessages(ids.a,g.id,undefined,undefined,100);
+  assert.equal(visible.some(m=>m.body==='must not persist'),false);
+});
+
+dbTest('assistant context is not exported after access has already been revoked',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant pre revoke');
+  await assistantService.enable(ids.a,g.id,'Helper');
+  await chatService.removeMember(ids.a,g.id,ids.b);
+  let calls=0;assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>{calls++;return {text:'no',provider:'test',model:'test-model'};}});
+  await assert.rejects(()=>assistantService.requestResponse(ids.b,g.id,randomUUID()),(e:any)=>e.code==='CONVERSATION_NOT_FOUND');
+  assert.equal(calls,0);
+});
+
+dbTest('expired generation ownership is reclaimed and stale owner cannot finalize',async()=>{
+  const { assistantRepository }=await import('../src/modules/assistant/assistant.repository');
+  const { assistantGenerations }=await import('../src/db/schema');
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant reclaim');await assistantService.enable(ids.a,g.id,'Helper');
+  const requestId=randomUUID();const first=await assistantRepository.claimGeneration(g.id,ids.a,requestId,{provider:'test',model:'test-model'});assert.equal(first.kind,'claimed');if(first.kind!=='claimed')return;
+  await db.update(assistantGenerations).set({leaseExpiresAt:new Date(Date.now()-1000)}).where(eq(assistantGenerations.id,first.generation.id));
+  const second=await assistantRepository.claimGeneration(g.id,ids.a,requestId,{provider:'test',model:'test-model'});assert.equal(second.kind,'claimed');if(second.kind!=='claimed')return;
+  assert.notEqual(second.ownerToken,first.ownerToken);
+  const stale=await assistantRepository.completeGeneration(g.id,first.generation.id,first.ownerToken,'stale',{provider:'test',model:'test-model',latencyMs:1});assert.equal(stale.kind,'ownership-lost');
+  const current=await assistantRepository.completeGeneration(g.id,second.generation.id,second.ownerToken,'current',{provider:'test',model:'test-model',latencyMs:1});assert.equal(current.kind,'completed');
+  const rows=await db.select().from(messages).where(eq(messages.clientMessageId,first.generation.id));assert.equal(rows.length,1);assert.equal(rows[0]?.body,'current');
+});
+
+dbTest('provider timeout is classified without creating an assistant message',async()=>{
+  const { assistantGenerations }=await import('../src/db/schema');
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant timeout');await assistantService.enable(ids.a,g.id,'Helper');
+  const requestId=randomUUID();assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'slow-model'}),generate:({signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}))},5);
+  await assert.rejects(()=>assistantService.requestResponse(ids.a,g.id,requestId),(e:any)=>e.code==='ASSISTANT_GENERATION_FAILED');
+  const [generation]=await db.select().from(assistantGenerations).where(eq(assistantGenerations.clientRequestId,requestId));assert.equal(generation?.errorCode,'PROVIDER_TIMEOUT');assert.equal(generation?.provider,'test');assert.equal(generation?.model,'slow-model');
+});
+
+dbTest('archiving a conversation while generation runs prevents final assistant persistence',async()=>{
+  const g=await chatService.createConversation(ids.a,[],'group','assistant archive');await assistantService.enable(ids.a,g.id,'Helper');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>{await gate;return {text:'after archive',provider:'test',model:'test-model'};}});
+  const request=assistantService.requestResponse(ids.a,g.id,randomUUID());await new Promise(resolve=>setTimeout(resolve,10));await chatService.leaveConversation(ids.a,g.id);release();
+  await assert.rejects(()=>request,(e:any)=>e.code==='CONVERSATION_NOT_FOUND');
+  const rows=await db.select().from(messages).where(and(eq(messages.conversationId,g.id),eq(messages.body,'after archive')));assert.equal(rows.length,0);
+});
+
+dbTest('assistant success records one attempt usage row and reconnect catch-up sees the final message',async()=>{
+  const { assistantGenerationAttempts }=await import('../src/db/schema');
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant usage');await assistantService.enable(ids.a,g.id,'Helper');
+  const marker=await chatService.sendMessage(ids.a,g.id,randomUUID(),'before assistant usage');
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'usage-model'}),generate:async()=>({text:'usage result',provider:'test',model:'usage-model',inputTokens:7,outputTokens:3,totalTokens:10})});
+  const result=await assistantService.requestResponse(ids.a,g.id,randomUUID());assert.ok(result.message);
+  const attempts=await db.select().from(assistantGenerationAttempts).where(eq(assistantGenerationAttempts.generationId,result.generation.id));assert.equal(attempts.length,1);assert.equal(attempts[0]?.totalTokens,10);assert.equal(attempts[0]?.status,'succeeded');
+  const caughtUp=await chatService.listMessages(ids.a,g.id,undefined,marker.message.sequence,100);assert.equal(caughtUp.some(message=>message.id===result.message?.id),true);
+});
+
+dbTest('assistant final message uses the normal realtime publication path',async()=>{
+  const { realtimePublisher }=await import('../src/modules/chat/realtime.publisher');
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant realtime');await assistantService.enable(ids.a,g.id,'Helper');
+  assistantService.setGatewayForTests({describe:()=>({provider:'test',model:'test-model'}),generate:async()=>({text:'realtime assistant',provider:'test',model:'test-model'})});
+  const events:any[]=[];const unsubscribe=realtimePublisher.subscribe(ids.b,event=>events.push(event));
+  try{const result=await assistantService.requestResponse(ids.a,g.id,randomUUID());assert.ok(result.message);assert.equal(events.some(event=>event.type==='message.created'&&event.payload.id===result.message?.id),true);}finally{unsubscribe();}
+});
+
+dbTest('provider invocation revalidates membership after a generation claim',async()=>{
+  const { assistantRepository }=await import('../src/modules/assistant/assistant.repository');
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant prepare auth');await assistantService.enable(ids.a,g.id,'Helper');
+  const claimed=await assistantRepository.claimGeneration(g.id,ids.b,randomUUID(),{provider:'test',model:'test-model'});assert.equal(claimed.kind,'claimed');if(claimed.kind!=='claimed')return;
+  await chatService.removeMember(ids.a,g.id,ids.b);
+  const prepared=await assistantRepository.prepareProviderInvocation(g.id,claimed.generation.id,claimed.ownerToken);assert.equal(prepared.kind,'authorization-revoked');
 });
