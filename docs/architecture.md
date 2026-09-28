@@ -5,7 +5,7 @@
 - `apps/web`: Next.js client for authentication UX and protected entry page
 - `apps/server`: Fastify API for auth, session, and profile bootstrap
 - `packages/ui`: reusable UI primitives shared by web
-- `packages/types`: shared auth-centric contracts (`User`, `Role`, `AuthTokens`)
+- `packages/contracts`: shared auth-centric contracts (`User`, `Role`, `AuthTokens`)
 - `packages/utils`: low-level helpers (`cn`)
 - `packages/config`: shared TS/ESLint/Prettier configs
 
