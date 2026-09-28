@@ -34,3 +34,9 @@ export const requestAssistantResponseSchema=z.object({clientRequestId:z.string()
 export const assistantParticipantSchema=z.object({id:z.string().uuid(),conversationId:z.string().uuid(),displayName:z.string(),joinedSequence:z.number().int().positive(),createdAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string())});
 export const assistantGenerationStatusSchema=z.enum(['pending','running','completed','failed']);
 export const assistantGenerationSchema=z.object({id:z.string().uuid(),conversationId:z.string().uuid(),assistantId:z.string().uuid(),clientRequestId:z.string().uuid(),status:assistantGenerationStatusSchema,finalMessageId:z.string().uuid().nullish().transform(v=>v??undefined),createdAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),completedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined)});
+export type AssistantParticipant=z.infer<typeof assistantParticipantSchema>;
+export type AssistantGeneration=z.infer<typeof assistantGenerationSchema>;
+export const assistantResponseSchema=z.object({generation:assistantGenerationSchema,message:messageSchema.optional(),duplicate:z.boolean()});
+export const assistantStateResponseSchema=z.object({assistant:assistantParticipantSchema.optional(),generation:assistantGenerationSchema.optional()});
+export const assistantResponseResponseSchema=assistantResponseSchema;
+export const assistantEnableResponseSchema=z.object({assistant:assistantParticipantSchema});
