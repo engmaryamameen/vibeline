@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import fastifyJwt from '@fastify/jwt';
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { Role } from '@vibeline/types';
+import type { Role } from '@vibeline/contracts';
 
 import { AppError } from '@/common/errors/app-error';
 import { env } from '@/config/env';
@@ -12,7 +12,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     secret: env.JWT_SECRET
   });
 
-  const ensureAccessToken = (request: { user: { type?: string } }) => {
+  const ensureAccessToken = (request: FastifyRequest) => {
     if (request.user.type !== 'access') {
       throw new AppError(401, 'INVALID_ACCESS_TOKEN', 'Access token is invalid or expired');
     }
@@ -20,13 +20,13 @@ const authPlugin: FastifyPluginAsync = async (app) => {
 
   app.decorate('authenticate', async (request) => {
     await request.jwtVerify();
-    ensureAccessToken(request as { user: { type?: string } });
+    ensureAccessToken(request);
   });
 
   app.decorate('authorize', (roles: Role[]) => {
     return async (request, reply) => {
       await request.jwtVerify();
-      ensureAccessToken(request as { user: { type?: string } });
+      ensureAccessToken(request);
       const role = (request.user as { role: Role }).role;
 
       if (!roles.includes(role)) {

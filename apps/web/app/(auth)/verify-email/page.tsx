@@ -11,7 +11,7 @@ import { AuthGuard } from '@/src/components/auth/auth-guard';
 import { apiClient, ApiError } from '@/src/lib/api-client';
 import { useAuthStore } from '@/src/store/auth.store';
 
-import type { User } from '@vibeline/types';
+import type { User } from '@vibeline/contracts';
 
 type VerifyResponse = {
   user: User;

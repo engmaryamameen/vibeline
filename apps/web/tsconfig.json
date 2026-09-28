@@ -6,8 +6,8 @@
       "@/*": [
         "./*"
       ],
-      "@vibeline/types": [
-        "../../packages/types/src/index.ts"
+      "@vibeline/contracts": [
+        "../../packages/contracts/src/index.ts"
       ],
       "@vibeline/utils": [
         "../../packages/utils/src/index.ts"

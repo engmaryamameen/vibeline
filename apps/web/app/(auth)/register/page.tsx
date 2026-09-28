@@ -16,7 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 
-import type { User as UserType } from '@vibeline/types';
+import type { User as UserType } from '@vibeline/contracts';
 import { Button, Input, VibeLineLogo } from '@vibeline/ui';
 
 import { AuthGuard } from '@/src/components/auth/auth-guard';
@@ -35,18 +35,18 @@ type AuthResponse = {
 const features = [
   {
     icon: Zap,
-    title: 'Real-time messaging',
-    description: 'Instant delivery with zero lag'
+    title: 'Reliable messaging',
+    description: 'Consistent conversation history across sessions'
   },
   {
     icon: Shield,
-    title: 'Secure by design',
-    description: 'End-to-end encryption for privacy'
+    title: 'Authenticated access',
+    description: 'Verified accounts and protected conversations'
   },
   {
     icon: Users,
-    title: 'Team collaboration',
-    description: 'Channels for every project'
+    title: 'Conversation-ready',
+    description: 'A focused foundation for team communication'
   }
 ];
 

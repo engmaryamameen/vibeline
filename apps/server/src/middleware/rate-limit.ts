@@ -1,0 +1,3 @@
+import { AppError } from '@/common/errors/app-error';
+type Bucket={count:number;resetAt:number};const buckets=new Map<string,Bucket>();
+export const rateLimit=(scope:string,limit:number,windowMs:number)=>async(request:{ip:string})=>{const now=Date.now();if(buckets.size>10000)for(const [key,b] of buckets)if(b.resetAt<=now)buckets.delete(key);const key=`${scope}:${request.ip}`;const current=buckets.get(key);if(!current||current.resetAt<=now){buckets.set(key,{count:1,resetAt:now+windowMs});return;}current.count+=1;if(current.count>limit)throw new AppError(429,'RATE_LIMITED','Too many requests. Please try again later.');};

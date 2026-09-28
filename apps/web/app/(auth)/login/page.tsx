@@ -14,7 +14,7 @@ import {
   EyeOff
 } from 'lucide-react';
 
-import type { User } from '@vibeline/types';
+import type { User } from '@vibeline/contracts';
 import { Button, Input, VibeLineLogo } from '@vibeline/ui';
 
 import { AuthGuard } from '@/src/components/auth/auth-guard';
@@ -34,17 +34,17 @@ const highlights = [
   {
     icon: Zap,
     title: 'Lightning fast',
-    description: 'Real-time messaging with zero delay'
+    description: 'Reliable messaging with durable history'
   },
   {
     icon: Shield,
     title: 'Enterprise security',
-    description: 'Bank-grade encryption for all data'
+    description: 'Secure authentication and access controls'
   },
   {
     icon: Globe,
     title: 'Global scale',
-    description: 'Available in 190+ countries'
+    description: 'Responsive web experience'
   }
 ];
 
