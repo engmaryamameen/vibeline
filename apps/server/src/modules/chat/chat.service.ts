@@ -1,9 +1,13 @@
-import type { ChatEventType } from '@vibeline/contracts';
+import type { ChatEventType,Message } from '@vibeline/contracts';
 import { AppError } from '@/common/errors/app-error';
 import { chatRepository } from './chat.repository';
 import { realtimePublisher } from './realtime.publisher';
+import type { FastifyBaseLogger } from 'fastify';
 
 class ChatService {
+  private logger:FastifyBaseLogger|undefined;
+  setLogger(logger:FastifyBaseLogger){this.logger=logger;}
+  getMessageForRealtime(conversationId:string,messageId:string){return chatRepository.getMessage(conversationId,messageId);}
   async createConversation(userId:string,participantUserIds:string[],type:'direct'|'group',title?:string){
     const participants=[...new Set(participantUserIds)];
     if(participants.includes(userId))throw new AppError(400,'INVALID_PARTICIPANTS','Do not include yourself as a participant');
@@ -65,7 +69,7 @@ class ChatService {
   async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string){
     const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body);
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    if(result.created)await this.publish(conversationId,'message.created',result.message);
+    if(result.created)void this.publish(conversationId,'message.created',result.message);
     return result;
   }
 
@@ -75,7 +79,7 @@ class ChatService {
     if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');
     if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can edit this message');
     if(result.kind==='deleted')throw new AppError(409,'MESSAGE_DELETED','Deleted messages cannot be edited');
-    await this.publish(conversationId,'message.updated',result.message);
+    void this.publish(conversationId,'message.updated',result.message);
     return result.message;
   }
 
@@ -84,7 +88,7 @@ class ChatService {
     if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');
     if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can delete this message');
-    await this.publish(conversationId,'message.deleted',result.message);
+    void this.publish(conversationId,'message.deleted',result.message);
     return result.message;
   }
 
@@ -100,9 +104,9 @@ class ChatService {
     return membership;
   }
 
-  private async publish(conversationId:string,type:ChatEventType,payload:unknown){
-    const memberIds=(await chatRepository.listMembers(conversationId)).map(member=>member.userId);
-    realtimePublisher.publish(memberIds,{type,conversationId,payload});
+  private async publish(conversationId:string,type:ChatEventType,payload:Message){
+    try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,payload.sequence)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type,conversationId,payload});}
+    catch(error){this.logger?.error({error,operation:'chat.realtime.publish',conversationId,messageId:payload?.id},'realtime publish failed; committed state remains authoritative');}
   }
 }
 
