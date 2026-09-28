@@ -22,6 +22,11 @@ class AssistantService{
   constructor(private gateway:ModelGateway=new OpenAiModelGateway()){}
   setLogger(logger:FastifyBaseLogger){this.logger=logger;}
   setGatewayForTests(gateway:ModelGateway,timeoutMs=30_000){this.gateway=gateway;this.providerTimeoutMs=timeoutMs;}
+  async getState(userId:string,conversationId:string){
+    const state=await assistantRepository.getState(conversationId,userId);
+    if(!state)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
+    return state;
+  }
   async enable(userId:string,conversationId:string,displayName:string){
     const result=await assistantRepository.enableAssistant(conversationId,userId,displayName);
     if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');

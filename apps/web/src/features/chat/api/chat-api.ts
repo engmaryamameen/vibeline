@@ -1,4 +1,4 @@
-import { conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
+import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
 import type { ConversationSummary,Message,UserSearchResult } from '@vibeline/contracts';
 export type AuthorizedRequest=<T>(path:string,options?:{method?:'GET'|'POST'|'PATCH'|'DELETE';body?:unknown;responseSchema?:{parse:(value:unknown)=>T}})=>Promise<T>;
 export const chatApi=(request:AuthorizedRequest)=>({
@@ -8,6 +8,9 @@ export const chatApi=(request:AuthorizedRequest)=>({
  sendMessage:(id:string,body:string,clientMessageId=crypto.randomUUID())=>request(`/chat/conversations/${id}/messages`,{method:'POST',body:{clientMessageId,body},responseSchema:messageResponseSchema}),
  editMessage:(id:string,messageId:string,body:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'PATCH',body:{body},responseSchema:messageResponseSchema}),
  deleteMessage:(id:string,messageId:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'DELETE',responseSchema:messageResponseSchema}),
+ getAssistantState:(id:string)=>request(`/chat/conversations/${id}/assistant`,{responseSchema:assistantStateResponseSchema}),
+ enableAssistant:(id:string,displayName='Assistant')=>request(`/chat/conversations/${id}/assistant`,{method:'POST',body:{displayName},responseSchema:assistantEnableResponseSchema}),
+ requestAssistantResponse:(id:string,clientRequestId:string)=>request(`/chat/conversations/${id}/assistant/responses`,{method:'POST',body:{clientRequestId},responseSchema:assistantResponseResponseSchema}),
  createConversation:(participantUserIds:string[],type:'direct'|'group',title?:string)=>request(`/chat/conversations`,{method:'POST',body:{participantUserIds,type,...(title?{title}:{})},responseSchema:conversationResponseSchema}),
  updateConversation:(id:string,title:string)=>request(`/chat/conversations/${id}`,{method:'PATCH',body:{title},responseSchema:conversationResponseSchema}),
  addMember:(id:string,userId:string)=>request(`/chat/conversations/${id}/members`,{method:'POST',body:{userId},responseSchema:conversationDetailResponseSchema}),
