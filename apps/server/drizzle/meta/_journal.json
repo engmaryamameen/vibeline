@@ -43,6 +43,13 @@
       "when": 1771621438510,
       "tag": "0005_phase1_identity_and_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771621438511,
+      "tag": "0006_assistant_responses",
+      "breakpoints": true
     }
   ]
 }

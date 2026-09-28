@@ -33,7 +33,10 @@ const envSchema = z.object({
   GOOGLE_CALLBACK_URL: optionalUrl,
   GITHUB_CLIENT_ID: optionalNonEmpty,
   GITHUB_CLIENT_SECRET: optionalNonEmpty,
-  GITHUB_CALLBACK_URL: optionalUrl
+  GITHUB_CALLBACK_URL: optionalUrl,
+  OPENAI_API_KEY: optionalNonEmpty,
+  OPENAI_MODEL: optionalNonEmpty,
+  OPENAI_RESPONSES_URL: optionalUrl
 }).superRefine((value, ctx) => {
   const validateProvider = (name: 'GOOGLE' | 'GITHUB') => {
     const fields = [`${name}_CLIENT_ID`, `${name}_CLIENT_SECRET`, `${name}_CALLBACK_URL`] as const;
@@ -44,6 +47,9 @@ const envSchema = z.object({
   };
   validateProvider('GOOGLE');
   validateProvider('GITHUB');
+  const modelFields = ['OPENAI_API_KEY','OPENAI_MODEL','OPENAI_RESPONSES_URL'] as const;
+  const modelConfigured = modelFields.filter(field => Boolean(value[field]));
+  if (modelConfigured.length > 0 && modelConfigured.length < modelFields.length) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [modelConfigured[0] ?? 'OPENAI_API_KEY'], message: 'OpenAI provider must provide API key, model name, and Responses URL together' });
 
   if (value.NODE_ENV === 'production') {
     const appUrl = new URL(value.APP_URL);

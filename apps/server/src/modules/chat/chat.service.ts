@@ -92,6 +92,8 @@ class ChatService {
     return result.message;
   }
 
+  async publishPersistedMessage(conversationId:string,message:Message){await this.publish(conversationId,'message.created',message);}
+
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     if(result==='direct')throw new AppError(400,'DIRECT_MEMBERS_IMMUTABLE','Direct conversation membership cannot change');

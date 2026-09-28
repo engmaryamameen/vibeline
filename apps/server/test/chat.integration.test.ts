@@ -6,6 +6,8 @@ import { db, pool } from '../src/db/client';
 import { conversationMembers, conversations, messages, users } from '../src/db/schema';
 import { chatService } from '../src/modules/chat/chat.service';
 import { sessionService } from '../src/modules/auth/session.service';
+import { assistantService } from '../src/modules/assistant/assistant.service';
+import type { ModelGateway } from '../src/modules/assistant/model.gateway';
 
 const ids={a:randomUUID(),b:randomUUID(),outsider:randomUUID()};
 let conversationId='';
@@ -76,4 +78,48 @@ dbTest('rejoined members are not realtime recipients for messages outside their 
   const { chatRepository }=await import('../src/modules/chat/chat.repository');
   const recipients=await chatRepository.listMessageRecipientIds(g.id,before.message.sequence);
   assert.equal(recipients.some(member=>member.userId===ids.b),false);
+});
+
+
+dbTest('assistant generation is durable, sequenced, and idempotent',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant');
+  await assistantService.enable(ids.a,g.id,'Helper');
+  await chatService.sendMessage(ids.a,g.id,randomUUID(),'summarize this point');
+  let calls=0;
+  const gateway:ModelGateway={generate:async()=>{calls++;return {text:'A deterministic response',provider:'test',model:'test-model',inputTokens:12,outputTokens:4,totalTokens:16};}};
+  assistantService.setGatewayForTests(gateway);
+  const requestId=randomUUID();
+  const [first,retry]=await Promise.all([assistantService.requestResponse(ids.a,g.id,requestId),assistantService.requestResponse(ids.a,g.id,requestId)]);
+  assert.equal(calls,1);
+  const completed=first.message?first:retry;
+  assert.ok(completed.message);
+  assert.equal(completed.message!.assistantId!==undefined,true);
+  assert.equal(completed.message!.senderId??undefined,undefined);
+  const later=await assistantService.requestResponse(ids.a,g.id,requestId);
+  assert.equal(later.message?.id,completed.message!.id);
+  assert.equal(calls,1);
+});
+
+dbTest('assistant context respects the invoking membership visibility period',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant visibility');
+  await assistantService.enable(ids.a,g.id,'Helper');
+  await chatService.sendMessage(ids.a,g.id,randomUUID(),'hidden before rejoin');
+  await chatService.removeMember(ids.a,g.id,ids.b);
+  await chatService.addMember(ids.a,g.id,ids.b);
+  await chatService.sendMessage(ids.a,g.id,randomUUID(),'visible after rejoin');
+  let context='';
+  assistantService.setGatewayForTests({generate:async({messages})=>{context=messages.map(m=>m.content).join('|');return {text:'ok',provider:'test',model:'test-model'};}});
+  await assistantService.requestResponse(ids.b,g.id,randomUUID());
+  assert.equal(context.includes('hidden before rejoin'),false);
+  assert.equal(context.includes('visible after rejoin'),true);
+});
+
+dbTest('provider failure records failure without creating an assistant message',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','assistant failure');
+  await assistantService.enable(ids.a,g.id,'Helper');
+  const before=await chatService.listMessages(ids.a,g.id,undefined,undefined,100);
+  assistantService.setGatewayForTests({generate:async()=>{throw new Error('provider down');}});
+  await assert.rejects(()=>assistantService.requestResponse(ids.a,g.id,randomUUID()),(e:any)=>e.code==='ASSISTANT_GENERATION_FAILED');
+  const after=await chatService.listMessages(ids.a,g.id,undefined,undefined,100);
+  assert.equal(after.length,before.length);
 });
