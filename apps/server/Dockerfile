@@ -6,7 +6,7 @@ FROM base AS deps
 COPY package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/server/package.json apps/server/
 COPY packages/config/package.json packages/config/
-COPY packages/types/package.json packages/types/
+COPY packages/contracts/package.json packages/contracts/
 RUN pnpm install --filter @vibeline/server... --frozen-lockfile=false
 
 FROM deps AS build

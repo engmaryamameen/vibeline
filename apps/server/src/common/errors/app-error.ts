@@ -1,10 +1,12 @@
-export class AppError extends Error {
-  statusCode: number;
-  code: string;
+import type { ApiErrorCode } from '@vibeline/contracts';
 
-  constructor(statusCode: number, code: string, message: string) {
+export class AppError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly code: ApiErrorCode,
+    message: string
+  ) {
     super(message);
-    this.statusCode = statusCode;
-    this.code = code;
+    this.name = 'AppError';
   }
 }

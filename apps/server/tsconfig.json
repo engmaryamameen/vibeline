@@ -8,7 +8,7 @@
     "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@vibeline/types": ["../../packages/types/src/index.ts"]
+      "@vibeline/contracts": ["../../packages/contracts/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"]

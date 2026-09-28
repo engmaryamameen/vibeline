@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
-import type { Role } from '@vibeline/types';
+import type { Role } from '@vibeline/contracts';
 
 declare module 'fastify' {
   interface FastifyInstance {
