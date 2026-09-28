@@ -44,6 +44,7 @@ export const externalIdentities = pgTable('external_identities', {
 export const conversationType = pgEnum('conversation_type', ['direct', 'group']);
 export const conversationMemberRole = pgEnum('conversation_member_role', ['owner', 'admin', 'member']);
 export const assistantGenerationStatus = pgEnum('assistant_generation_status', ['pending', 'running', 'completed', 'failed']);
+export const assistantGenerationAttemptStatus = pgEnum('assistant_generation_attempt_status', ['running', 'succeeded', 'failed', 'abandoned']);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
@@ -128,9 +129,34 @@ export const assistantGenerations = pgTable('assistant_generations', {
   finalMessageId: text('final_message_id').references(() => messages.id, { onDelete: 'set null' }),
   inputTokens: integer('input_tokens'), outputTokens: integer('output_tokens'), totalTokens: integer('total_tokens'),
   latencyMs: integer('latency_ms'), errorCode: text('error_code'),
+  ownerToken: text('owner_token'),
+  leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+  attemptCount: integer('attempt_count').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   startedAt: timestamp('started_at', { withTimezone: true }), completedAt: timestamp('completed_at', { withTimezone: true })
 }, (table) => [
   uniqueIndex('assistant_generations_request_uq').on(table.conversationId, table.requestedByUserId, table.clientRequestId),
-  index('assistant_generations_conversation_created_idx').on(table.conversationId, table.createdAt)
+  index('assistant_generations_conversation_created_idx').on(table.conversationId, table.createdAt),
+  index('assistant_generations_running_lease_idx').on(table.leaseExpiresAt).where(sql`${table.status} = 'running'`),
+  check('assistant_generations_attempt_count_ck', sql`${table.attemptCount} >= 0`)
+]);
+
+export const assistantGenerationAttempts = pgTable('assistant_generation_attempts', {
+  id: text('id').primaryKey(),
+  generationId: text('generation_id').notNull().references(() => assistantGenerations.id, { onDelete: 'cascade' }),
+  attemptNumber: integer('attempt_number').notNull(),
+  ownerToken: text('owner_token').notNull(),
+  status: assistantGenerationAttemptStatus('status').notNull().default('running'),
+  provider: text('provider'),
+  model: text('model'),
+  inputTokens: integer('input_tokens'), outputTokens: integer('output_tokens'), totalTokens: integer('total_tokens'),
+  latencyMs: integer('latency_ms'), errorCode: text('error_code'),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }).notNull().defaultNow(),
+  leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }).notNull(),
+  completedAt: timestamp('completed_at', { withTimezone: true })
+}, (table) => [
+  uniqueIndex('assistant_generation_attempts_number_uq').on(table.generationId, table.attemptNumber),
+  uniqueIndex('assistant_generation_attempts_owner_uq').on(table.generationId, table.ownerToken),
+  index('assistant_generation_attempts_generation_idx').on(table.generationId, table.claimedAt),
+  check('assistant_generation_attempts_number_ck', sql`${table.attemptNumber} >= 1`)
 ]);
