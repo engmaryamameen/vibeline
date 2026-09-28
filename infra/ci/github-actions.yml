@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 jobs:
   validate:
@@ -43,3 +43,5 @@ jobs:
       - run: pnpm --filter @vibeline/server db:migrate
       - run: pnpm --filter @vibeline/server test:integration
       - run: pnpm build
+      - run: docker build -f infra/docker/server.Dockerfile .
+      - run: docker build -f infra/docker/web.Dockerfile .

@@ -178,7 +178,7 @@ class OAuthService {
     const tokenPayload = (await tokenResponse.json()) as GithubTokenResponse;
 
     if (!tokenPayload.access_token) {
-      logger.error({ error: tokenPayload }, 'GitHub token exchange returned no access token');
+      logger.error({ provider: 'github' }, 'GitHub token exchange returned no access token');
       throw new Error('Failed to authenticate with GitHub');
     }
 

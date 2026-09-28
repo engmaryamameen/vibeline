@@ -60,3 +60,20 @@ dbTest('message delete is idempotent and edit cannot resurrect a tombstone',asyn
   assert.equal(first.id,retry.id);assert.ok(retry.deletedAt);assert.equal(retry.body,'');
   await assert.rejects(()=>chatService.editMessage(ids.a,conversationId,sent.message.id,'resurrect'),(e:any)=>e.code==='MESSAGE_DELETED');
 });
+
+dbTest('catch-up after a sequence returns committed messages in ascending order',async()=>{
+  const marker=await chatService.sendMessage(ids.a,conversationId,randomUUID(),'catch-up marker');
+  const created=await Promise.all(Array.from({length:6},(_,i)=>chatService.sendMessage(ids.a,conversationId,randomUUID(),`catch-up ${i}`)));
+  const caughtUp=await chatService.listMessages(ids.a,conversationId,undefined,marker.message.sequence,100);
+  assert.deepEqual(caughtUp.map(message=>message.sequence),created.map(result=>result.message.sequence).sort((a,b)=>a-b));
+});
+
+dbTest('rejoined members are not realtime recipients for messages outside their visibility period',async()=>{
+  const g=await chatService.createConversation(ids.a,[ids.b],'group','realtime visibility');
+  const before=await chatService.sendMessage(ids.a,g.id,randomUUID(),'before realtime rejoin');
+  await chatService.removeMember(ids.a,g.id,ids.b);
+  await chatService.addMember(ids.a,g.id,ids.b);
+  const { chatRepository }=await import('../src/modules/chat/chat.repository');
+  const recipients=await chatRepository.listMessageRecipientIds(g.id,before.message.sequence);
+  assert.equal(recipients.some(member=>member.userId===ids.b),false);
+});

@@ -1,8 +1,21 @@
-FROM node:24.21.0-alpine
+FROM node:24.21.0-alpine AS build
 WORKDIR /app
 RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/server/package.json apps/server/
+COPY packages/config/package.json packages/config/
+COPY packages/contracts/package.json packages/contracts/
+RUN pnpm install --filter @vibeline/server... --frozen-lockfile
 COPY . .
-RUN pnpm install --frozen-lockfile=false
 RUN pnpm --filter @vibeline/server build
+
+FROM node:24.21.0-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=build --chown=app:app /app/apps/server/dist ./dist
+COPY --from=build --chown=app:app /app/apps/server/package.json ./package.json
+COPY --from=build --chown=app:app /app/node_modules ./node_modules
+USER app
 EXPOSE 5001
-CMD ["pnpm", "--filter", "@vibeline/server", "start"]
+CMD ["node", "dist/server.cjs"]

@@ -13,7 +13,7 @@
 - PostgreSQL row locking for sequence allocation and concurrency-sensitive membership operations.
 - Authenticated SSE event stream with heartbeat, bounded connection lifetime, client reconnect, and REST recovery.
 - Responsive chat UI with conversation/user discovery, creation, history, sending/loading/empty/error states, member management, edit/delete and retry-safe sends.
-- Structured Fastify/Pino logging, request IDs, body limits, security response headers, liveness/readiness, graceful shutdown.
+- Structured Fastify/Pino logging with redaction, request IDs, body limits, security response headers, liveness/readiness, and graceful shutdown.
 - Per-process throttling for login and credential-recovery endpoints.
 - PostgreSQL integration tests for key chat/session invariants and CI PostgreSQL provisioning.
 - API and architecture documentation.
@@ -23,7 +23,7 @@
 - Realtime fan-out is single-process. Correct for one API process; multiple replicas require shared Pub/Sub.
 - Rate limiting is per-process. Multiple replicas require a shared limiter.
 - Access JWT revocation is bounded by the configured short token lifetime; refresh sessions are immediately revocable.
-- Observability has structured logs/request IDs but not metrics dashboards or distributed traces.
+- Observability has structured logs/request IDs and an operational signal contract, but not an in-repository metrics backend or distributed traces.
 - Group UI is intentionally utilitarian; API semantics are richer than presentation polish.
 - Message deletion is user tombstoning, not retention/compliance erasure.
 
@@ -35,7 +35,7 @@
 - Google/GitHub OAuth credentials and production callback registration.
 - Secret manager rather than plaintext deployment environment files.
 - Metrics/log aggregation/alerting backend.
-- Redis when horizontal realtime fan-out/distributed throttling is required.
+- Shared realtime/rate-limit infrastructure only when horizontal requirements justify it; it is not required for the current single-process guarantees.
 
 ## Not implemented because there is no current requirement
 

@@ -21,8 +21,10 @@ class ChatRepository {
     });
   }
   getConversation(id:string){return db.query.conversations.findFirst({where:eq(conversations.id,id)});}
+  getMessage(id:string,messageId:string){return db.query.messages.findFirst({where:and(eq(messages.id,messageId),eq(messages.conversationId,id))});}
   getMembership(id:string,userId:string){return db.query.conversationMembers.findFirst({where:activeMembership(id,userId)});}
   listMembers(id:string){return db.select({userId:users.id,displayName:users.displayName,avatarUrl:users.avatarUrl,role:conversationMembers.role,joinedAt:conversationMembers.joinedAt}).from(conversationMembers).innerJoin(users,eq(users.id,conversationMembers.userId)).where(and(eq(conversationMembers.conversationId,id),isNull(conversationMembers.leftAt)));}
+  listMessageRecipientIds(id:string,sequence:number){return db.select({userId:conversationMembers.userId}).from(conversationMembers).where(and(eq(conversationMembers.conversationId,id),isNull(conversationMembers.leftAt),sql`${conversationMembers.joinedSequence} <= ${sequence}`));}
   listConversations(userId:string){return db.select({conversation:conversations}).from(conversationMembers).innerJoin(conversations,eq(conversationMembers.conversationId,conversations.id)).where(and(eq(conversationMembers.userId,userId),isNull(conversationMembers.leftAt),isNull(conversations.archivedAt))).orderBy(desc(conversations.updatedAt));}
   async updateTitle(id:string,title:string){const [row]=await db.update(conversations).set({title,updatedAt:new Date()}).where(eq(conversations.id,id)).returning();return row;}
 
