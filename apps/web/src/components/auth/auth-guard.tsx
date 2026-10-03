@@ -1,11 +1,10 @@
 'use client';
 import { useEffect,useState,type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@vibeline/contracts';
-import { apiClient } from '@/src/lib/api-client';
+import { restoreAuthSession } from '@/src/lib/auth-session';
 import { useAuthStore } from '@/src/store/auth.store';
 type Props={mode:'guest'|'protected';children:ReactNode};
-export const AuthGuard=({mode,children}:Props)=>{const router=useRouter();const {token,currentUser,setSession,clearSession}=useAuthStore();const [ready,setReady]=useState(false);
- useEffect(()=>{let active=true;(async()=>{if(token&&currentUser){setReady(true);return;}try{const r=await apiClient<{user:User;tokens:{accessToken:string}}>('/auth/refresh',{method:'POST'});if(active)setSession({token:r.tokens.accessToken,currentUser:r.user});}catch{if(active)clearSession();}finally{if(active)setReady(true);}})();return()=>{active=false};},[]);
+export const AuthGuard=({mode,children}:Props)=>{const router=useRouter();const {token,currentUser}=useAuthStore();const [ready,setReady]=useState(false);
+ useEffect(()=>{let active=true;(async()=>{if(token&&currentUser){setReady(true);return;}try{await restoreAuthSession();}catch{}finally{if(active)setReady(true);}})();return()=>{active=false};},[]);
  useEffect(()=>{if(!ready)return;if(mode==='protected'&&!useAuthStore.getState().token)router.replace('/login');if(mode==='guest'&&useAuthStore.getState().token)router.replace('/');},[ready,mode,router,token]);
  if(!ready)return <main className="flex min-h-screen items-center justify-center">Loading…</main>;if(mode==='protected'&&!token)return null;if(mode==='guest'&&token)return null;return <>{children}</>};

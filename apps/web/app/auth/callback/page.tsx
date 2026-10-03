@@ -4,14 +4,11 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { VibeLineLogo } from '@vibeline/ui';
 
-import { useAuthStore } from '@/src/store/auth.store';
-import { apiClient } from '@/src/lib/api-client';
-import type { User } from '@vibeline/contracts';
+import { refreshAuthSession } from '@/src/lib/auth-session';
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setSession = useAuthStore((state) => state.setSession);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,12 +20,11 @@ function AuthCallbackContent() {
     }
     const initSession = async () => {
       try {
-        const response = await apiClient<{ user: User; tokens: { accessToken: string } }>('/auth/refresh', { method: 'POST' });
-        setSession({ token: response.tokens.accessToken, currentUser: response.user }); router.replace('/');
+        await refreshAuthSession(); router.replace('/');
       } catch { setError('Failed to complete sign-in'); setIsLoading(false); setTimeout(() => router.replace('/login'), 3000); }
     };
     initSession();
-  }, [router, searchParams, setSession]);
+  }, [router, searchParams]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50">
