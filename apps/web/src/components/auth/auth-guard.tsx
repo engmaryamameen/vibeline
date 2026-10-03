@@ -1,10 +1,22 @@
 'use client';
-import { useEffect,useState,type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { restoreAuthSession } from '@/src/lib/auth-session';
-import { useAuthStore } from '@/src/store/auth.store';
-type Props={mode:'guest'|'protected';children:ReactNode};
-export const AuthGuard=({mode,children}:Props)=>{const router=useRouter();const {token,currentUser}=useAuthStore();const [ready,setReady]=useState(false);
- useEffect(()=>{let active=true;(async()=>{if(token&&currentUser){setReady(true);return;}try{await restoreAuthSession();}catch{}finally{if(active)setReady(true);}})();return()=>{active=false};},[]);
- useEffect(()=>{if(!ready)return;if(mode==='protected'&&!useAuthStore.getState().token)router.replace('/login');if(mode==='guest'&&useAuthStore.getState().token)router.replace('/');},[ready,mode,router,token]);
- if(!ready)return <main className="flex min-h-screen items-center justify-center">Loading…</main>;if(mode==='protected'&&!token)return null;if(mode==='guest'&&token)return null;return <>{children}</>};
+
+import type { ReactNode } from 'react';
+
+import { useAuthGuard, type AuthGuardMode } from '@/src/features/auth/hooks/use-auth-guard';
+
+type Props = {
+  mode: AuthGuardMode;
+  children: ReactNode;
+};
+
+export function AuthGuard({ mode, children }: Props) {
+  const { ready, isAllowed } = useAuthGuard(mode);
+
+  if (!ready) {
+    return <main className="flex min-h-screen items-center justify-center">Loading…</main>;
+  }
+
+  if (!isAllowed) return null;
+
+  return <>{children}</>;
+}

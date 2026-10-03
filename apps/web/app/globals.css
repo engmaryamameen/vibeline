@@ -95,3 +95,22 @@
     text-wrap: balance;
   }
 }
+
+@layer components {
+  .auth-stage { background: radial-gradient(circle at 75% 12%, rgb(var(--accent-primary) / .08), transparent 28%), rgb(var(--surface-bg)); }
+  .auth-story { background: linear-gradient(145deg, #090d18 0%, #11182a 48%, #16143a 100%); }
+  .auth-grid { position:absolute; inset:0; opacity:.16; background-image:linear-gradient(rgb(255 255 255/.08) 1px,transparent 1px),linear-gradient(90deg,rgb(255 255 255/.08) 1px,transparent 1px); background-size:48px 48px; mask-image:linear-gradient(to bottom,black,transparent 88%); }
+  .auth-orb { position:absolute; border-radius:9999px; filter:blur(1px); animation:authFloat 11s ease-in-out infinite; }
+  .auth-orb-one { width:26rem;height:26rem;right:-8rem;top:-8rem;background:radial-gradient(circle at 30% 30%,rgb(116 96 255/.65),rgb(72 45 180/.08) 70%); }
+  .auth-orb-two { width:20rem;height:20rem;left:-7rem;bottom:6rem;background:radial-gradient(circle at 40% 40%,rgb(0 199 255/.28),transparent 70%);animation-delay:-5s; }
+  .auth-feature { border:1px solid rgb(255 255 255/.09);background:rgb(255 255 255/.045);border-radius:1rem;padding:1rem;backdrop-filter:blur(16px);transition:transform .3s ease,background .3s ease; }
+  .auth-feature:hover { transform:translateY(-4px);background:rgb(255 255 255/.075); }
+  .auth-logo { box-shadow:0 12px 35px rgb(65 92 255/.22); }
+  .auth-primary { background:linear-gradient(115deg,#3156ee,#6646e8);box-shadow:0 10px 28px rgb(66 76 220/.22);transition:transform .2s ease,box-shadow .2s ease,filter .2s ease; }
+  .auth-primary:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 14px 34px rgb(66 76 220/.3);filter:brightness(1.05); }
+  .auth-mobile-glow { position:absolute;width:18rem;height:18rem;right:-9rem;top:-8rem;border-radius:9999px;background:rgb(var(--accent-primary)/.09);filter:blur(55px); }
+  .animate-auth-enter { animation:authEnter .55s cubic-bezier(.22,1,.36,1) both; }
+}
+@keyframes authEnter { from{opacity:0;transform:translateY(14px) scale(.985)} to{opacity:1;transform:none} }
+@keyframes authFloat { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(-18px,22px,0)} }
+@media (prefers-reduced-motion: reduce) { .auth-orb,.animate-auth-enter{animation:none!important}.auth-feature,.auth-primary{transition:none!important} }
