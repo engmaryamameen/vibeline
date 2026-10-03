@@ -6,7 +6,8 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Söhne', 'system-ui', '-apple-system', 'sans-serif']
+        display: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif']
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }],

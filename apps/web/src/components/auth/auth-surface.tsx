@@ -32,10 +32,6 @@ export function AuthShell({ children }: { children: ReactNode }) {
             {children}
           </div>
         </div>
-
-        <p className="text-center text-[11px] text-content-muted lg:text-left">
-          Private conversations, protected by design.
-        </p>
       </section>
 
       <AuthVisual />
@@ -103,21 +99,35 @@ function AuthVisual() {
   );
 }
 
+
 export function Brand({ light = false }: { light?: boolean }) {
   return (
-    <Link href="/" className="relative z-10 inline-flex w-fit items-center gap-3" aria-label="VibeLine home">
-      <VibeLineLogo
-        size="md"
-        variant={light ? 'light' : 'dark'}
-        className="shadow-[0_12px_30px_rgb(var(--accent-primary)/0.18)]"
+    <Link
+      href="/"
+      className="relative z-10 inline-flex w-fit items-center gap-1 select-none transition-opacity hover:opacity-90"
+      aria-label="VibeLine home"
+    >
+      <img
+        src="/images/vibeline-bird-logo-green.svg"
+        alt=""
+        className="h-11 w-auto shrink-0"
+        aria-hidden="true"
       />
-      <span className={cn('text-lg font-semibold tracking-[-0.03em]', light ? 'text-white' : 'text-content-primary')}>
-        VibeLine
+
+      <span
+        className={cn(
+          "font-poppins flex items-center text-[26px] font-bold leading-none tracking-[-0.045em]",
+          light ? "text-white" : "text-slate-900"
+        )}
+      >
+        Vibe
+        <span className="text-[#22C55E] dark:text-emerald-400">
+          Line
+        </span>
       </span>
     </Link>
   );
 }
-
 export function AuthPage({ children }: { children: ReactNode }) {
   return <div className="animate-auth-route motion-reduce:animate-none">{children}</div>;
 }
