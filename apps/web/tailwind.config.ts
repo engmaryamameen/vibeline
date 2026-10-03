@@ -5,8 +5,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
+        shone: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         poppins: ['Poppins', 'sans-serif']
       },
       fontSize: {

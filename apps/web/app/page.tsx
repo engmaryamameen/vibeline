@@ -21,7 +21,7 @@ export default function HomePage() {
             href="/login"
             className="hidden text-sm font-semibold text-content-secondary transition-colors hover:text-content-primary sm:inline-flex"
           >
-            Sign in
+            Login
           </Link>
         </header>
 
@@ -52,7 +52,7 @@ export default function HomePage() {
             </Link>
             <Link href="/login">
               <Button size="lg" variant="secondary" className="h-12 w-full rounded-xl">
-                Sign in
+                Login
               </Button>
             </Link>
           </div>

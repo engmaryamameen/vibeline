@@ -25,33 +25,27 @@ export default function RegisterPage() {
       <form className="space-y-5" onSubmit={onSubmit} aria-label="Registration form">
         <AuthField
           label="Name"
-          icon={User}
           id="displayName"
           name="displayName"
           autoComplete="name"
           placeholder="Enter your name"
-          required
         />
         <AuthField
           label="Email"
-          icon={Mail}
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           placeholder="Enter your email address"
-          required
         />
         <AuthField
           label="Password"
-          icon={Lock}
           id="password"
           name="password"
           type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           placeholder="At least 8 characters"
           minLength={8}
-          required
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
 
@@ -69,7 +63,7 @@ export default function RegisterPage() {
       <p className="mt-7 text-center text-sm text-content-secondary">
         Already have an account?{' '}
         <Link href="/login" className="font-semibold text-accent transition-colors hover:text-accent-hover">
-          Sign in
+          Login
         </Link>
       </p>
     </AuthPage>

@@ -55,7 +55,7 @@ function ResetPasswordContent() {
           description="Your new password is ready. You can sign in and continue your conversations."
         >
           <Link href="/login" className={cn(authPrimaryClassName, 'mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold')}>
-            Sign in
+            Login
             <ArrowRight className="h-4 w-4" />
           </Link>
         </AuthStatePanel>
@@ -69,22 +69,18 @@ function ResetPasswordContent() {
       <form className="space-y-5" onSubmit={onSubmit}>
         <AuthField
           label="New password"
-          icon={Lock}
           id="password"
           name="password"
           type={showPassword ? 'text' : 'password'}
-          required
           autoComplete="new-password"
           placeholder="At least 8 characters"
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
         <AuthField
           label="Confirm password"
-          icon={Lock}
           id="confirmPassword"
           name="confirmPassword"
           type={showConfirmPassword ? 'text' : 'password'}
-          required
           autoComplete="new-password"
           placeholder="Enter it again"
           trailing={<PasswordToggle visible={showConfirmPassword} onClick={toggleConfirmPasswordVisibility} />}

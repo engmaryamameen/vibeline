@@ -32,13 +32,12 @@ export default function ForgotPasswordPage() {
           />
           <form className="space-y-5" onSubmit={onSubmit}>
             <AuthField
-              label="Email address"
-              icon={Mail}
+              id="email"
               name="email"
+              label="Email"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
-              required
+              placeholder="Enter your email address"
             />
             {error && <AuthNotice>{error}</AuthNotice>}
             <SubmitButton loading={loading} loadingLabel="Sending…">

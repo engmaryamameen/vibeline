@@ -9,6 +9,7 @@ import {
   EyeOff,
   Loader2,
   LockKeyhole,
+  Info,
   MessageCircleMore,
   Sparkles,
   type LucideProps
@@ -27,7 +28,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
       <section className="col-span-4 grid grid-rows-[auto_1fr_auto] self-stretch md:col-span-6 md:col-start-2 lg:col-span-5 lg:col-start-auto">
         <Brand />
 
-        <div className="flex items-center py-8 sm:py-10 lg:py-12">
+        <div className="flex items-center py-8 sm:py-10 lg:py-10 pl-16 sm:px-auto">
           <div className="w-full max-w-[430px] md:mx-auto lg:mx-0">
             {children}
           </div>
@@ -134,11 +135,11 @@ export function AuthPage({ children }: { children: ReactNode }) {
 
 export function AuthHeader({ title, description }: { title: string; description: string }) {
   return (
-    <header className="mb-8">
-      <h1 className="text-[2rem] font-semibold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem]">
+    <header className="mb-4">
+      <h1 className="text-[2rem] font-bold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem]">
         {title}
       </h1>
-      <p className="mt-3 max-w-sm text-sm leading-6 text-content-secondary sm:text-[15px]">
+      <p className="mt-1 max-w-sm text-sm leading-6 text-content-secondary sm:text-[15px]">
         {description}
       </p>
     </header>
@@ -150,31 +151,71 @@ type AuthFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   icon?: ComponentType<LucideProps>;
   trailing?: ReactNode;
   labelAction?: ReactNode;
+  error?: string;
 };
 
-export function AuthField({ label, icon: Icon, trailing, labelAction, className, ...props }: AuthFieldProps) {
+export function AuthField({
+  label,
+  icon: Icon,
+  trailing,
+  labelAction,
+  error,
+  className,
+  id,
+  name,
+  ...props
+}: AuthFieldProps) {
+  const fieldId = id ?? name;
+  const errorId = fieldId ? `${fieldId}-error` : undefined;
+
   return (
-    <label className="block">
+    <label className="block" htmlFor={fieldId}>
       <span className="mb-2 flex min-h-5 items-center justify-between gap-3">
-        <span className="text-sm font-medium text-content-primary">{label}</span>
+        <span className="text-sm font-medium text-content-primary">
+          {label}
+        </span>
+
         {labelAction}
       </span>
+
       <span className="group relative block">
         {Icon && (
-          <Icon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted transition-colors duration-200 group-focus-within:text-accent" />
+          <Icon
+            className={cn(
+              'pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2',
+              'text-content-muted transition-colors duration-150',
+              'group-focus-within:text-accent',
+              error && 'text-status-error'
+            )}
+          />
         )}
+
         <Input
+          id={fieldId}
+          name={name}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : undefined}
           className={cn(
-            'h-12 rounded-xl border-border bg-surface-panel text-[15px] shadow-[0_1px_2px_rgba(16,40,29,0.03)]',
-            'focus:border-accent/65 focus:ring-4 focus:ring-accent/10',
             Icon && 'pl-11',
             trailing && 'pr-12',
             className
           )}
           {...props}
         />
+
         {trailing}
       </span>
+
+      {error && (
+        <span
+          id={errorId}
+          role="alert"
+          className="mt-1.5 flex items-center gap-2 text-sm leading-[22px] text-status-error"
+        >
+          <Info className="h-5 w-5 shrink-0" />
+          <span>{error}</span>
+        </span>
+      )}
     </label>
   );
 }

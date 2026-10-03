@@ -30,18 +30,16 @@ export default function LoginPage() {
 
   return (
     <AuthPage>
-      <AuthHeader title="Sign in" description="Welcome back. Continue your conversations from where you left them." />
+      <AuthHeader title="Login" description="Welcome back. Continue your conversations from where you left them." />
 
       <form className="space-y-5" onSubmit={onSubmit} aria-label="Login form">
         <AuthField
           label="Email"
-          icon={Mail}
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           placeholder="Enter your email address"
-          required
         />
 
         <AuthField
@@ -51,13 +49,11 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           }
-          icon={Lock}
           id="password"
           name="password"
           type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           placeholder="Enter your password"
-          required
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
 
@@ -80,7 +76,7 @@ export default function LoginPage() {
         {resendSuccess && <AuthNotice tone="success">Verification email sent. Check your inbox.</AuthNotice>}
 
         <SubmitButton loading={loading} loadingLabel="Signing in…">
-          <span>Sign in</span>
+          <span>Login</span>
           <ArrowRight className="h-4 w-4" />
         </SubmitButton>
       </form>
