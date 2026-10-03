@@ -2,136 +2,73 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Loader2, Mail, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Mail, XCircle } from 'lucide-react';
 
-import { Button, Card, Input, VibeLineLogo } from '@vibeline/ui';
-
-import { AuthGuard } from '@/src/components/auth/auth-guard';
+import { Button, Input } from '@vibeline/ui';
+import { AuthPage, AuthStatePanel } from '@/src/components/auth/auth-surface';
 import { useVerifyEmail } from '@/src/features/auth/hooks/use-verify-email';
 
 function VerifyEmailContent() {
-  const {
-    state,
-    error,
-    code,
-    codeLoading,
-    isCodeComplete,
-    onCodeChange,
-    submitCode
-  } = useVerifyEmail();
+  const { state, error, code, codeLoading, isCodeComplete, onCodeChange, submitCode } = useVerifyEmail();
+
+  if (state === 'loading') {
+    return (
+      <AuthPage>
+        <AuthStatePanel icon={<Loader2 className="h-6 w-6 animate-spin" />} title="Verifying your email" description="This should only take a moment." />
+      </AuthPage>
+    );
+  }
+
+  if (state === 'success') {
+    return (
+      <AuthPage>
+        <AuthStatePanel icon={<CheckCircle2 className="h-6 w-6" />} title="Email verified" description="Your account is ready. We’re taking you into VibeLine now." />
+      </AuthPage>
+    );
+  }
+
+  if (state === 'error') {
+    return (
+      <AuthPage>
+        <AuthStatePanel
+          icon={<XCircle className="h-6 w-6" />}
+          title="Verification failed"
+          description={error || 'The verification link is invalid or has expired.'}
+        >
+          <Link href="/login" className="mt-7 inline-flex text-sm font-semibold text-accent hover:text-accent-hover">Back to sign in</Link>
+        </AuthStatePanel>
+      </AuthPage>
+    );
+  }
 
   return (
-    <AuthGuard mode="guest">
-      <main className="flex min-h-screen flex-col items-center justify-center bg-surface-bg px-4 py-16">
-        <div className="mb-8 flex items-center gap-2">
-          <VibeLineLogo size="sm" className="h-8 w-8 rounded-lg" />
-          <span className="text-lg font-semibold text-content-primary">VibeLine</span>
+    <AuthPage>
+      <AuthStatePanel icon={<Mail className="h-6 w-6" />} title="Check your inbox" description="Open the verification link we sent, or enter the six digit code below.">
+        <div className="mx-auto mt-7 flex max-w-xs gap-2">
+          <Input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={code}
+            onChange={(event) => onCodeChange(event.target.value)}
+            className="h-12 flex-1 rounded-xl text-center font-mono text-lg tracking-[0.25em]"
+            disabled={codeLoading}
+            aria-label="6-digit verification code"
+          />
+          <Button size="lg" className="h-12 rounded-xl px-5" onClick={submitCode} disabled={codeLoading || !isCodeComplete}>
+            {codeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+          </Button>
         </div>
-
-        <Card className="w-full max-w-sm animate-fade-in">
-          {state === 'loading' && (
-            <div className="flex flex-col items-center py-8 text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-accent" />
-              <h1 className="mt-4 text-xl font-semibold text-content-primary">
-                Verifying your email
-              </h1>
-              <p className="mt-2 text-sm text-content-secondary">
-                Please wait while we verify your email address...
-              </p>
-            </div>
-          )}
-
-          {state === 'success' && (
-            <div className="flex flex-col items-center py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-status-success/20">
-                <CheckCircle className="h-6 w-6 text-status-success" />
-              </div>
-              <h1 className="mt-4 text-xl font-semibold text-content-primary">Email verified!</h1>
-              <p className="mt-2 text-sm text-content-secondary">
-                Your email has been verified successfully. Redirecting to the app...
-              </p>
-            </div>
-          )}
-
-          {state === 'error' && (
-            <div className="flex flex-col items-center py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-status-error/20">
-                <XCircle className="h-6 w-6 text-status-error" />
-              </div>
-              <h1 className="mt-4 text-xl font-semibold text-content-primary">
-                Verification failed
-              </h1>
-              <p className="mt-2 text-sm text-content-secondary">
-                {error || 'The verification link is invalid or has expired.'}
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Link href="/login">
-                  <Button variant="secondary">Back to login</Button>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {state === 'no-token' && (
-            <div className="flex flex-col items-center py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-soft">
-                <Mail className="h-6 w-6 text-content-muted" />
-              </div>
-              <h1 className="mt-4 text-xl font-semibold text-content-primary">Check your inbox</h1>
-              <p className="mt-2 text-sm text-content-secondary">
-                We&apos;ve sent a verification email. Click the link in the email, or enter the
-                6-digit verification code below.
-              </p>
-              <div className="mt-6 flex flex-col items-center gap-3">
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={code}
-                    onChange={(event) => onCodeChange(event.target.value)}
-                    className="w-32 text-center font-mono text-lg tracking-widest"
-                    disabled={codeLoading}
-                    aria-label="6-digit verification code"
-                  />
-                  <Button onClick={submitCode} disabled={codeLoading || !isCodeComplete}>
-                    {codeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
-                  </Button>
-                </div>
-              </div>
-              {error && <p className="mt-2 text-sm text-status-error">{error}</p>}
-              <div className="mt-6">
-                <Link href="/login">
-                  <Button variant="secondary">Back to login</Button>
-                </Link>
-              </div>
-            </div>
-          )}
-        </Card>
-      </main>
-    </AuthGuard>
+        {error && <p className="mt-3 text-sm text-status-error">{error}</p>}
+      </AuthStatePanel>
+    </AuthPage>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen flex-col items-center justify-center bg-surface-bg px-4 py-16">
-          <div className="mb-8 flex items-center gap-2">
-            <VibeLineLogo size="sm" className="h-8 w-8 rounded-lg" />
-            <span className="text-lg font-semibold text-content-primary">VibeLine</span>
-          </div>
-          <Card className="w-full max-w-sm animate-fade-in">
-            <div className="flex flex-col items-center py-8 text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-accent" />
-              <p className="mt-4 text-sm text-content-secondary">Loading...</p>
-            </div>
-          </Card>
-        </main>
-      }
-    >
+    <Suspense fallback={<div className="mx-auto h-64 w-full max-w-[420px] animate-pulse rounded-3xl bg-surface-soft" />}>
       <VerifyEmailContent />
     </Suspense>
   );

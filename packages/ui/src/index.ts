@@ -4,3 +4,4 @@ export * from './components/card';
 export * from './components/input';
 export * from './components/spinner';
 export * from './components/vibeline-logo';
+export * from './components/responsive-grid';

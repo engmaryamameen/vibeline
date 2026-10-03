@@ -92,7 +92,13 @@ const config: Config = {
         'slide-down': 'slideDown 200ms ease-out',
         'scale-in': 'scaleIn 150ms ease-out',
         'shimmer': 'shimmer 2s ease-in-out infinite',
-        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite'
+        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
+        'auth-route': 'authRouteEnter 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'auth-float': 'authFloat 12s ease-in-out infinite',
+        'auth-drift': 'authDrift 7s ease-in-out infinite',
+        'auth-drift-reverse': 'authDrift 8s ease-in-out -3s infinite reverse',
+        'auth-pulse': 'authPulse 4.8s ease-out infinite',
+        'home-float': 'homeFloat 6s ease-in-out infinite'
       },
       keyframes: {
         fadeIn: {
@@ -118,6 +124,27 @@ const config: Config = {
         pulseSubtle: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.6' }
+        },
+        authRouteEnter: {
+          from: { opacity: '0', transform: 'translateY(7px)' },
+          to: { opacity: '1', transform: 'translateY(0)' }
+        },
+        authFloat: {
+          '0%, 100%': { transform: 'translate3d(0, 0, 0)' },
+          '50%': { transform: 'translate3d(-16px, 20px, 0)' }
+        },
+        authDrift: {
+          '0%, 100%': { transform: 'translate3d(0, 0, 0)' },
+          '50%': { transform: 'translate3d(0, -10px, 0)' }
+        },
+        authPulse: {
+          '0%': { opacity: '0', transform: 'scale(0.82)' },
+          '35%': { opacity: '1' },
+          '100%': { opacity: '0', transform: 'scale(1.35)' }
+        },
+        homeFloat: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' }
         }
       },
       transitionDuration: {

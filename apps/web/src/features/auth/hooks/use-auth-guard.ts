@@ -50,7 +50,7 @@ export function useAuthGuard(mode: AuthGuardMode) {
     }
 
     if (mode === 'guest' && hasSession) {
-      router.replace('/');
+      router.replace('/chat');
     }
   }, [mode, ready, router, token]);
 

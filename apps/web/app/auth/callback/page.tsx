@@ -2,81 +2,90 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { VibeLineLogo } from '@vibeline/ui';
+import { PageShell, VibeLineLogo } from '@vibeline/ui';
 
 import { refreshAuthSession } from '@/src/lib/auth-session';
+
+type AuthCallbackStatusProps = {
+  error?: string | null;
+  message: string;
+};
+
+function AuthCallbackStatus({ error, message }: AuthCallbackStatusProps) {
+  return (
+    <PageShell
+      containerClassName="min-h-[100dvh] py-6 sm:py-8"
+      gridClassName="min-h-[calc(100dvh-3rem)] items-center sm:min-h-[calc(100dvh-4rem)]"
+    >
+      <section className="col-span-4 flex flex-col items-center justify-center text-center md:col-span-4 md:col-start-3 lg:col-span-4 lg:col-start-5">
+        <div className="relative">
+          {!error && (
+            <div className="absolute inset-0 animate-ping rounded-2xl bg-accent/15 motion-reduce:animate-none" />
+          )}
+          <div className="absolute -inset-4 rounded-3xl bg-accent/10 blur-xl" />
+          <VibeLineLogo size="lg" className="relative" />
+        </div>
+
+        <h1 className="mt-6 text-xl font-semibold tracking-[-0.03em] text-content-primary">VibeLine</h1>
+
+        {error ? (
+          <div className="mt-4">
+            <p className="text-sm text-status-error">{error}</p>
+            <p className="mt-2 text-xs text-content-muted">Redirecting to sign in...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mt-4 flex gap-1.5" aria-hidden="true">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-accent [animation-delay:-0.3s] motion-reduce:animate-none" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-accent [animation-delay:-0.15s] motion-reduce:animate-none" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-accent motion-reduce:animate-none" />
+            </div>
+            <p className="mt-3 text-sm text-content-muted">{message}</p>
+          </>
+        )}
+      </section>
+    </PageShell>
+  );
+}
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
-      setError(errorParam === 'account_link_required' ? 'An account with this email already exists. Sign in with its existing method before linking this provider.' : 'Authentication failed. Please try again.'); setIsLoading(false); setTimeout(() => router.replace('/login'), 3000); return;
+      setError(
+        errorParam === 'account_link_required'
+          ? 'An account with this email already exists. Sign in with its existing method before linking this provider.'
+          : 'Authentication failed. Please try again.'
+      );
+      const timeout = window.setTimeout(() => router.replace('/login'), 3000);
+      return () => window.clearTimeout(timeout);
     }
-    const initSession = async () => {
-      try {
-        await refreshAuthSession(); router.replace('/');
-      } catch { setError('Failed to complete sign-in'); setIsLoading(false); setTimeout(() => router.replace('/login'), 3000); }
+
+    let timeout: number | undefined;
+
+    void refreshAuthSession()
+      .then(() => router.replace('/'))
+      .catch(() => {
+        setError('Failed to complete sign-in');
+        timeout = window.setTimeout(() => router.replace('/login'), 3000);
+      });
+
+    return () => {
+      if (timeout) window.clearTimeout(timeout);
     };
-    initSession();
   }, [router, searchParams]);
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <div className="relative">
-        {isLoading && (
-          <div className="absolute inset-0 animate-ping rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-600/30" />
-        )}
-        <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 blur-xl" />
-        <VibeLineLogo size="lg" className="relative" />
-      </div>
-
-      <h1 className="mt-6 text-xl font-bold text-slate-900">VibeLine</h1>
-
-      {error && !isLoading ? (
-        <div className="mt-4 text-center">
-          <p className="text-sm text-red-600">{error}</p>
-          <p className="mt-2 text-xs text-slate-500">Redirecting to login...</p>
-        </div>
-      ) : (
-        <>
-          <div className="mt-4 flex gap-1">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.3s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-500 [animation-delay:-0.15s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-violet-500" />
-          </div>
-          <p className="mt-3 text-sm text-slate-500">Completing sign-in...</p>
-        </>
-      )}
-    </main>
-  );
+  return <AuthCallbackStatus error={error} message="Completing sign-in..." />;
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50">
-          <div className="relative">
-            <div className="absolute inset-0 animate-ping rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-600/30" />
-            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 blur-xl" />
-            <VibeLineLogo size="lg" className="relative" />
-          </div>
-          <h1 className="mt-6 text-xl font-bold text-slate-900">VibeLine</h1>
-          <div className="mt-4 flex gap-1">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.3s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-500 [animation-delay:-0.15s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-violet-500" />
-          </div>
-          <p className="mt-3 text-sm text-slate-500">Loading...</p>
-        </main>
-      }
-    >
+    <Suspense fallback={<AuthCallbackStatus message="Loading..." />}>
       <AuthCallbackContent />
     </Suspense>
   );

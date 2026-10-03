@@ -1,11 +1,229 @@
 'use client';
-import { useState,type FormEvent } from 'react';
-import type { AssistantGeneration,AssistantParticipant,ConversationMember,ConversationSummary,Message } from '@vibeline/contracts';
-type Props={conversation?:ConversationSummary;currentUserId?:string;messages:Message[];members:ConversationMember[];assistant?:AssistantParticipant;assistantGeneration?:AssistantGeneration;assistantBusy:boolean;assistantError:string;cursor?:number;sending:boolean;onBack:()=>void;onLoadOlder:()=>void;onSend:(body:string)=>Promise<void>;onEdit:(id:string,body:string)=>Promise<void>;onDelete:(id:string)=>Promise<void>;onRemoveMember:(id:string)=>Promise<void>;onAddMember:()=>Promise<void>;onRename:(title:string)=>Promise<void>;onEnableAssistant:()=>Promise<void>;onRequestAssistant:()=>Promise<void>};
-export function ConversationThread(p:Props){
- const [body,setBody]=useState('');
- if(!p.conversation)return <section className="hidden flex-1 md:flex"><div className="m-auto text-slate-500">Select or create a conversation</div></section>;
- const group=p.conversation.type==='group';const currentRole=p.members.find(member=>member.userId===p.currentUserId)?.role;const canEnable=group&&(currentRole==='owner'||currentRole==='admin');const assistantPending=p.assistantBusy||p.assistantGeneration?.status==='running';
- const submit=async(e:FormEvent)=>{e.preventDefault();const value=body.trim();if(!value)return;setBody('');await p.onSend(value);};
- return <section className="flex flex-1 flex-col"><header className="border-b bg-white px-6 py-4"><button onClick={p.onBack} className="mb-2 text-sm text-indigo-600 md:hidden">← Conversations</button><div className="flex items-center justify-between gap-4"><h2 className="font-semibold">{p.conversation.title||'Conversation'}</h2>{group&&<div className="flex items-center gap-2 text-xs">{p.assistant?<><span className="rounded bg-violet-100 px-2 py-1 text-violet-700">{p.assistant.displayName}</span><button disabled={assistantPending} onClick={()=>void p.onRequestAssistant()} className="rounded bg-violet-600 px-3 py-1.5 font-medium text-white disabled:opacity-50">{assistantPending?'Assistant working…':'Ask assistant'}</button></>:canEnable&&<button onClick={()=>void p.onEnableAssistant()} className="rounded border border-violet-300 px-3 py-1.5 text-violet-700">Enable assistant</button>}</div>}</div><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">{p.members.map(member=><span key={member.userId} className="rounded bg-slate-100 px-2 py-1">{member.displayName} ({member.role}){group&&member.userId!==p.currentUserId&&<button onClick={()=>void p.onRemoveMember(member.userId)} className="ml-1 text-red-500">×</button>}</span>)}</div>{group&&<div className="mt-2 flex gap-3 text-xs text-indigo-600"><button onClick={()=>{const title=window.prompt('New group name');if(title)void p.onRename(title);}}>rename</button><button onClick={()=>void p.onAddMember()}>add member</button></div>}{p.assistantGeneration?.status==='failed'&&<div className="mt-2 text-xs text-red-600">Assistant response failed. <button disabled={p.assistantBusy} onClick={()=>void p.onRequestAssistant()} className="underline">Try again</button></div>}{p.assistantError&&<div className="mt-1 text-xs text-red-600">{p.assistantError}</div>}</header><div className="flex-1 overflow-y-auto p-6">{p.cursor&&<button onClick={p.onLoadOlder} className="mx-auto mb-4 block text-sm text-indigo-600">Load older messages</button>}{p.messages.length===0?<p className="text-center text-sm text-slate-500">No messages yet.</p>:p.messages.map(message=><div key={message.id} className={`mb-3 flex ${message.senderId===p.currentUserId?'justify-end':'justify-start'}`}><div className="max-w-xl rounded-2xl bg-white px-4 py-2 shadow-sm">{message.assistantId&&<div className="mb-1 text-[11px] font-medium text-violet-600">{p.assistant?.displayName??'Assistant'}</div>}<p className={message.deletedAt?'italic text-slate-400':''}>{message.deletedAt?'Message deleted':message.body}</p><div className="mt-1 flex gap-2 text-[11px] text-slate-400"><span>#{message.sequence}</span>{message.editedAt&&<span>edited</span>}{message.senderId===p.currentUserId&&!message.deletedAt&&<><button onClick={()=>{const next=window.prompt('Edit message',message.body);if(next)void p.onEdit(message.id,next);}} className="hover:text-indigo-600">edit</button><button onClick={()=>void p.onDelete(message.id)} className="hover:text-red-600">delete</button></>}</div></div></div>)}</div><form onSubmit={submit} className="flex gap-2 border-t bg-white p-4"><input value={body} onChange={e=>setBody(e.target.value)} maxLength={10000} required placeholder="Write a message" className="flex-1 rounded-xl border px-4 py-3"/><button disabled={p.sending} className="rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white disabled:opacity-50">{p.sending?'Sending…':'Send'}</button></form></section>;
+
+import { useState, type FormEvent } from 'react';
+import type {
+  AssistantGeneration,
+  AssistantParticipant,
+  ConversationMember,
+  ConversationSummary,
+  Message
+} from '@vibeline/contracts';
+import { Button, Input } from '@vibeline/ui';
+import { cn } from '@vibeline/utils';
+
+type ConversationThreadProps = {
+  className?: string;
+  conversation?: ConversationSummary;
+  currentUserId?: string;
+  messages: Message[];
+  members: ConversationMember[];
+  assistant?: AssistantParticipant;
+  assistantGeneration?: AssistantGeneration;
+  assistantBusy: boolean;
+  assistantError: string;
+  cursor?: number;
+  sending: boolean;
+  onBack: () => void;
+  onLoadOlder: () => void;
+  onSend: (body: string) => Promise<void>;
+  onEdit: (id: string, body: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onRemoveMember: (id: string) => Promise<void>;
+  onAddMember: () => Promise<void>;
+  onRename: (title: string) => Promise<void>;
+  onEnableAssistant: () => Promise<void>;
+  onRequestAssistant: () => Promise<void>;
+};
+
+export function ConversationThread({ className, ...props }: ConversationThreadProps) {
+  const [body, setBody] = useState('');
+
+  if (!props.conversation) {
+    return (
+      <section className={cn('hidden h-full min-w-0 items-center justify-center bg-surface-bg md:flex', className)}>
+        <p className="text-sm text-content-muted">Select or create a conversation</p>
+      </section>
+    );
+  }
+
+  const isGroup = props.conversation.type === 'group';
+  const currentRole = props.members.find((member) => member.userId === props.currentUserId)?.role;
+  const canEnableAssistant = isGroup && (currentRole === 'owner' || currentRole === 'admin');
+  const assistantPending = props.assistantBusy || props.assistantGeneration?.status === 'running';
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const value = body.trim();
+    if (!value) return;
+    setBody('');
+    await props.onSend(value);
+  };
+
+  return (
+    <section className={cn('flex h-full min-w-0 flex-col bg-surface-bg', className)}>
+      <header className="border-b border-border bg-surface-panel px-4 py-4 sm:px-6">
+        <button
+          type="button"
+          onClick={props.onBack}
+          className="mb-2 text-sm font-medium text-accent md:hidden"
+        >
+          ← Conversations
+        </button>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="min-w-0 truncate font-semibold text-content-primary">
+            {props.conversation.title || 'Conversation'}
+          </h2>
+          {isGroup && (
+            <div className="flex items-center gap-2 text-xs">
+              {props.assistant ? (
+                <>
+                  <span className="rounded-lg bg-accent-subtle px-2 py-1 text-accent">
+                    {props.assistant.displayName}
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={assistantPending}
+                    onClick={() => void props.onRequestAssistant()}
+                  >
+                    {assistantPending ? 'Assistant working…' : 'Ask assistant'}
+                  </Button>
+                </>
+              ) : (
+                canEnableAssistant && (
+                  <Button size="sm" variant="secondary" onClick={() => void props.onEnableAssistant()}>
+                    Enable assistant
+                  </Button>
+                )
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-2 text-xs text-content-muted">
+          {props.members.map((member) => (
+            <span key={member.userId} className="rounded-lg bg-surface-soft px-2 py-1">
+              {member.displayName} ({member.role})
+              {isGroup && member.userId !== props.currentUserId && (
+                <button
+                  type="button"
+                  onClick={() => void props.onRemoveMember(member.userId)}
+                  className="ml-1 text-status-error"
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+
+        {isGroup && (
+          <div className="mt-2 flex gap-3 text-xs font-medium text-accent">
+            <button
+              type="button"
+              onClick={() => {
+                const title = window.prompt('New group name');
+                if (title) void props.onRename(title);
+              }}
+            >
+              Rename
+            </button>
+            <button type="button" onClick={() => void props.onAddMember()}>
+              Add member
+            </button>
+          </div>
+        )}
+
+        {props.assistantGeneration?.status === 'failed' && (
+          <div className="mt-2 text-xs text-status-error">
+            Assistant response failed.{' '}
+            <button
+              type="button"
+              disabled={props.assistantBusy}
+              onClick={() => void props.onRequestAssistant()}
+              className="underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        {props.assistantError && <div className="mt-1 text-xs text-status-error">{props.assistantError}</div>}
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        {props.cursor && (
+          <button
+            type="button"
+            onClick={props.onLoadOlder}
+            className="mx-auto mb-4 block text-sm font-medium text-accent"
+          >
+            Load older messages
+          </button>
+        )}
+
+        {props.messages.length === 0 ? (
+          <p className="text-center text-sm text-content-muted">No messages yet.</p>
+        ) : (
+          props.messages.map((message) => {
+            const isCurrentUser = message.senderId === props.currentUserId;
+
+            return (
+              <div key={message.id} className={cn('mb-3 flex', isCurrentUser ? 'justify-end' : 'justify-start')}>
+                <div
+                  className={cn(
+                    'max-w-[min(42rem,85%)] rounded-2xl px-4 py-2 shadow-sm',
+                    isCurrentUser ? 'bg-accent text-white' : 'border border-border-subtle bg-surface-panel text-content-primary'
+                  )}
+                >
+                  {message.assistantId && (
+                    <div className={cn('mb-1 text-[11px] font-medium', isCurrentUser ? 'text-white/75' : 'text-accent')}>
+                      {props.assistant?.displayName ?? 'Assistant'}
+                    </div>
+                  )}
+                  <p className={message.deletedAt ? 'italic opacity-60' : ''}>
+                    {message.deletedAt ? 'Message deleted' : message.body}
+                  </p>
+                  <div className={cn('mt-1 flex gap-2 text-[11px]', isCurrentUser ? 'text-white/65' : 'text-content-muted')}>
+                    <span>#{message.sequence}</span>
+                    {message.editedAt && <span>edited</span>}
+                    {isCurrentUser && !message.deletedAt && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = window.prompt('Edit message', message.body);
+                            if (next) void props.onEdit(message.id, next);
+                          }}
+                          className="hover:underline"
+                        >
+                          edit
+                        </button>
+                        <button type="button" onClick={() => void props.onDelete(message.id)} className="hover:underline">
+                          delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <form onSubmit={submit} className="flex gap-2 border-t border-border bg-surface-panel p-3 sm:p-4">
+        <Input
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          maxLength={10000}
+          required
+          placeholder="Write a message"
+          className="h-11 flex-1 rounded-xl bg-surface-bg px-4"
+        />
+        <Button type="submit" size="lg" disabled={props.sending} className="h-11 rounded-xl px-5">
+          {props.sending ? 'Sending…' : 'Send'}
+        </Button>
+      </form>
+    </section>
+  );
 }
