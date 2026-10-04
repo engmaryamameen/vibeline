@@ -3,10 +3,10 @@ export const conversationTypeSchema=z.enum(['direct','group']);
 export type ConversationType=z.infer<typeof conversationTypeSchema>;
 export const conversationMemberRoleSchema=z.enum(['owner','admin','member']);
 export type ConversationMemberRole=z.infer<typeof conversationMemberRoleSchema>;
-export const conversationSummarySchema=z.object({id:z.string().uuid(),type:conversationTypeSchema,title:z.string().nullish().transform(v=>v??undefined),createdAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),updatedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),archivedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined)});
-export type ConversationSummary={id:string;type:ConversationType;title?:string;createdAt:string;updatedAt:string;archivedAt?:string};
-export const conversationMemberSchema=z.object({userId:z.string().uuid(),displayName:z.string(),avatarUrl:z.string().nullish().transform(v=>v??undefined),role:conversationMemberRoleSchema,joinedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string())});
-export type ConversationMember={userId:string;displayName:string;avatarUrl?:string;role:ConversationMemberRole;joinedAt:string};
+export const conversationSummarySchema=z.object({id:z.string().uuid(),type:conversationTypeSchema,title:z.string().nullish().transform(v=>v??undefined),displayTitle:z.string().optional(),avatarUrl:z.string().nullish().transform(v=>v??undefined),lastMessage:z.string().nullish().transform(v=>v??undefined),lastMessageAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined),lastMessageSenderId:z.string().uuid().nullish().transform(v=>v??undefined),peerLastSeenAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined),createdAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),updatedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),archivedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined)});
+export type ConversationSummary=z.infer<typeof conversationSummarySchema>;
+export const conversationMemberSchema=z.object({userId:z.string().uuid(),displayName:z.string(),avatarUrl:z.string().nullish().transform(v=>v??undefined),role:conversationMemberRoleSchema,joinedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),deliveredSequence:z.number().int().nonnegative().default(0),readSequence:z.number().int().nonnegative().default(0),lastSeenAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined)});
+export type ConversationMember=z.infer<typeof conversationMemberSchema>;
 export const messageSchema=z.object({id:z.string().uuid(),conversationId:z.string().uuid(),senderId:z.string().uuid().nullish().transform(v=>v??undefined),assistantId:z.string().uuid().nullish().transform(v=>v??undefined),clientMessageId:z.string().uuid(),sequence:z.number().int().positive(),body:z.string(),createdAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()),editedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined),deletedAt:z.coerce.date().transform(v=>v.toISOString()).or(z.string()).nullish().transform(v=>v??undefined)});
 export type Message={id:string;conversationId:string;senderId?:string;assistantId?:string;clientMessageId:string;sequence:number;body:string;createdAt:string;editedAt?:string;deletedAt?:string};
 export const createConversationRequestSchema=z.object({participantUserIds:z.array(z.string().uuid()).min(1).max(49),title:z.string().trim().min(1).max(120).optional(),type:conversationTypeSchema.default('group')}).superRefine((v,c)=>{if(v.type==='direct'&&v.participantUserIds.length!==1)c.addIssue({code:'custom',path:['participantUserIds'],message:'Direct conversations require exactly one other participant'});if(v.type==='direct'&&v.title)c.addIssue({code:'custom',path:['title'],message:'Direct conversations cannot be renamed'});});
@@ -16,7 +16,7 @@ export const updateMemberRoleRequestSchema=z.object({role:z.enum(['admin','membe
 export const sendMessageRequestSchema=z.object({clientMessageId:z.string().uuid(),body:z.string().trim().min(1).max(10_000)});
 export const editMessageRequestSchema=z.object({body:z.string().trim().min(1).max(10_000)});
 export const listMessagesQuerySchema=z.object({beforeSequence:z.coerce.number().int().positive().optional(),afterSequence:z.coerce.number().int().nonnegative().optional(),limit:z.coerce.number().int().min(1).max(100).default(50)});
-export const chatEventTypeSchema=z.enum(['message.created','message.updated','message.deleted','conversation.updated']);
+export const chatEventTypeSchema=z.enum(['message.created','message.updated','message.deleted','conversation.updated','receipt.updated','presence.updated']);
 export type ChatEventType=z.infer<typeof chatEventTypeSchema>;
 export type ChatEvent={type:ChatEventType;conversationId:string;payload:unknown};
 export const conversationParamsSchema=z.object({conversationId:z.string().uuid()});
@@ -27,7 +27,10 @@ export const conversationDetailResponseSchema=z.object({conversation:conversatio
 export const conversationResponseSchema=z.object({conversation:conversationSummarySchema});
 export const messagesResponseSchema=z.object({messages:z.array(messageSchema),nextCursor:z.number().int().positive().optional()});
 export const messageResponseSchema=z.object({message:messageSchema,duplicate:z.boolean().optional()});
-export const messageChatEventSchema=z.object({type:z.enum(['message.created','message.updated','message.deleted']),conversationId:z.string().uuid(),payload:messageSchema});
+export const receiptUpdateSchema=z.object({userId:z.string().uuid(),deliveredSequence:z.number().int().nonnegative(),readSequence:z.number().int().nonnegative()});
+export const presenceUpdateSchema=z.object({userId:z.string().uuid(),lastSeenAt:z.string()});
+export const updateReceiptRequestSchema=z.object({deliveredSequence:z.number().int().nonnegative(),readSequence:z.number().int().nonnegative()});
+export const messageChatEventSchema=z.union([z.object({type:z.enum(['message.created','message.updated','message.deleted']),conversationId:z.string().uuid(),payload:messageSchema}),z.object({type:z.literal('receipt.updated'),conversationId:z.string().uuid(),payload:receiptUpdateSchema}),z.object({type:z.literal('presence.updated'),conversationId:z.string().uuid(),payload:presenceUpdateSchema})]);
 
 export const enableAssistantRequestSchema=z.object({displayName:z.string().trim().min(1).max(80).default('Assistant')});
 export const requestAssistantResponseSchema=z.object({clientRequestId:z.string().uuid()});

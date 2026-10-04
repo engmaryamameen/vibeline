@@ -1,0 +1,4 @@
+'use client';
+import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
+export function ChatDialog({open,title,onClose,children}:{open:boolean;title:string;onClose:()=>void;children:ReactNode}){if(!open)return null;return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 sm:items-center sm:p-6" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div role="dialog" aria-modal="true" aria-label={title} className="max-h-[86dvh] w-full overflow-hidden rounded-t-[24px] bg-surface-panel shadow-2xl sm:max-w-md sm:rounded-[20px]"><div className="flex h-14 items-center justify-between border-b border-border-subtle px-4"><h2 className="text-[17px] font-semibold">{title}</h2><button aria-label="Close" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full bg-surface-soft hover:bg-surface-hover"><X size={18}/></button></div>{children}</div></div>}

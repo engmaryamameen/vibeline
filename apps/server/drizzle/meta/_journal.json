@@ -71,6 +71,13 @@
       "when": 1791102600000,
       "tag": "0009_user_profile_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791147600000,
+      "tag": "0010_chat_presence_receipts",
+      "breakpoints": true
     }
   ]
 }

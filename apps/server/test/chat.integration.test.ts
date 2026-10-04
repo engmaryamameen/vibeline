@@ -20,6 +20,16 @@ dbTest('concurrent sends allocate unique ordered sequences',async()=>{const resu
 dbTest('concurrent duplicate retries create one durable message',async()=>{const clientMessageId=randomUUID();const results=await Promise.all(Array.from({length:8},()=>chatService.sendMessage(ids.a,conversationId,clientMessageId,'once')));assert.equal(new Set(results.map(r=>r.message.id)).size,1);const rows=await db.select().from(messages).where(eq(messages.clientMessageId,clientMessageId));assert.equal(rows.length,1);});
 dbTest('cursor history does not overlap',async()=>{const first=await chatService.listMessages(ids.a,conversationId,undefined,undefined,5);assert.ok(first.length>0);const older=await chatService.listMessages(ids.a,conversationId,first[0]!.sequence,undefined,5);assert.ok(older.every(m=>m.sequence<first[0]!.sequence));});
 
+dbTest('conversation list exposes peer identity and latest visible message without extra client queries',async()=>{
+  await chatService.sendMessage(ids.b,conversationId,randomUUID(),'latest list preview');
+  const list=await chatService.listConversations(ids.a);
+  const direct=list.find(c=>c.id===conversationId);
+  assert.equal(direct?.displayTitle,'Test 1');
+  assert.equal(direct?.lastMessage,'latest list preview');
+  assert.equal(direct?.lastMessageSenderId,ids.b);
+  assert.ok(direct?.lastMessageAt);
+});
+
 dbTest('direct conversation creation converges under concurrency',async()=>{const results=await Promise.all(Array.from({length:6},()=>chatService.createConversation(ids.a,[ids.b],'direct')));assert.equal(new Set(results.map(c=>c.id)).size,1);});
 
 dbTest('refresh rotation detects reuse and revokes the account sessions',async()=>{const first=await sessionService.create(ids.a);const second=await sessionService.rotate(first);assert.notEqual(second.refreshToken,first);await assert.rejects(()=>sessionService.rotate(first),(e:any)=>e.code==='REFRESH_TOKEN_REUSED');});

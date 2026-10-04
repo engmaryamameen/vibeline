@@ -40,7 +40,6 @@ class UserService {
   }
 
   async searchUsers(userId: string, query: string) {
-    if (query.trim().length < 2) return [];
     return userRepository.search(query.trim(), userId);
   }
 }
