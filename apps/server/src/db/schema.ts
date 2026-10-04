@@ -164,3 +164,19 @@ export const assistantGenerationAttempts = pgTable('assistant_generation_attempt
   index('assistant_generation_attempts_generation_idx').on(table.generationId, table.claimedAt),
   check('assistant_generation_attempts_number_ck', sql`${table.attemptNumber} >= 1`)
 ]);
+
+export const userPresence = pgTable('user_presence', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const conversationMemberReceipts = pgTable('conversation_member_receipts', {
+  conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  deliveredSequence: integer('delivered_sequence').notNull().default(0),
+  readSequence: integer('read_sequence').notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('conversation_member_receipts_pk').on(table.conversationId, table.userId),
+  check('conversation_member_receipts_sequences_ck', sql`${table.readSequence} <= ${table.deliveredSequence} AND ${table.readSequence} >= 0`)
+]);

@@ -14,6 +14,8 @@ export const chatApi=(request:AuthorizedRequest)=>({
  createConversation:(participantUserIds:string[],type:'direct'|'group',title?:string)=>request(`/chat/conversations`,{method:'POST',body:{participantUserIds,type,...(title?{title}:{})},responseSchema:conversationResponseSchema}),
  updateConversation:(id:string,title:string)=>request(`/chat/conversations/${id}`,{method:'PATCH',body:{title},responseSchema:conversationResponseSchema}),
  addMember:(id:string,userId:string)=>request(`/chat/conversations/${id}/members`,{method:'POST',body:{userId},responseSchema:conversationDetailResponseSchema}),
+ updateReceipt:(id:string,deliveredSequence:number,readSequence:number)=>request(`/chat/conversations/${id}/receipt`,{method:'POST',body:{deliveredSequence,readSequence}}),
+ touchPresence:()=>request(`/chat/presence`,{method:'POST'}),
  removeMember:(id:string,userId:string)=>request<void>(`/chat/conversations/${id}/members/${userId}`,{method:'DELETE'}),
  searchUsers:(q:string)=>request(`/users/search?q=${encodeURIComponent(q)}`,{responseSchema:userSearchResponseSchema})
 });

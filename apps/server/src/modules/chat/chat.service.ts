@@ -92,6 +92,10 @@ class ChatService {
     return result.message;
   }
 
+  async updateReceipt(userId:string,conversationId:string,deliveredSequence:number,readSequence:number){const receipt=await chatRepository.updateReceipt(conversationId,userId,deliveredSequence,readSequence);if(!receipt)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');const ids=(await chatRepository.listMessageRecipientIds(conversationId,Number.MAX_SAFE_INTEGER)).map(x=>x.userId);void realtimePublisher.publish(ids,{type:'receipt.updated',conversationId,payload:{userId,deliveredSequence:receipt.deliveredSequence,readSequence:receipt.readSequence}}).catch(()=>undefined);return receipt;}
+
+  async touchPresence(userId:string){const presence=await chatRepository.touchPresence(userId);const peers=(await chatRepository.listConversationPeerIds(userId)).map(x=>x.userId);for(const conversation of await chatRepository.listConversations(userId))void realtimePublisher.publish(peers,{type:'presence.updated',conversationId:conversation.id,payload:{userId,lastSeenAt:presence.lastSeenAt.toISOString()}}).catch(()=>undefined);return presence;}
+
   async publishPersistedMessage(conversationId:string,message:Message){await this.publish(conversationId,'message.created',message);}
 
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
