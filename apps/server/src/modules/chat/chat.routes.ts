@@ -1,3 +1,4 @@
+import type { ServerResponse } from 'node:http';
 import type { FastifyPluginAsync,FastifyRequest } from 'fastify';
 import { enableAssistantRequestSchema,requestAssistantResponseSchema,addMemberRequestSchema,conversationParamsSchema,createConversationRequestSchema,editMessageRequestSchema,deleteMessageQuerySchema,listMessagesQuerySchema,memberParamsSchema,messageParamsSchema,sendMessageRequestSchema,updateConversationRequestSchema,updateReceiptRequestSchema,updateMemberRoleRequestSchema } from '@vibeline/contracts';
 import { validate } from '@/utils/validation';
@@ -7,7 +8,7 @@ import { assistantService } from '@/modules/assistant/assistant.service';
 
 const userId=(request:FastifyRequest)=>request.user.sub;
 export const chatRoutes:FastifyPluginAsync=async(app)=>{
-  const eventStreams = new Set<import('node:http').ServerResponse>();
+  const eventStreams = new Set<ServerResponse>();
   app.addHook('onClose', async () => { for (const stream of eventStreams) stream.end(); eventStreams.clear(); });
   app.addHook('preHandler',app.authenticate);
   app.post('/conversations',async(request,reply)=>{const body=validate(createConversationRequestSchema,request.body);const conversation=await chatService.createConversation(userId(request),body.participantUserIds,body.type,body.title);return reply.status(201).send({conversation});});
@@ -22,7 +23,7 @@ export const chatRoutes:FastifyPluginAsync=async(app)=>{
   app.post('/conversations/:conversationId/assistant',async(request,reply)=>{const {conversationId}=validate(conversationParamsSchema,request.params);const body=validate(enableAssistantRequestSchema,request.body);const assistant=await assistantService.enable(userId(request),conversationId,body.displayName);return reply.status(201).send({assistant});});
   app.post('/conversations/:conversationId/assistant/responses',async(request,reply)=>{const {conversationId}=validate(conversationParamsSchema,request.params);const body=validate(requestAssistantResponseSchema,request.body);const result=await assistantService.requestResponse(userId(request),conversationId,body.clientRequestId);const status=result.duplicate&&result.generation.status!=='completed'?202:result.duplicate?200:201;return reply.status(status).send(result);});
   app.get('/conversations/:conversationId/messages',async request=>{const {conversationId}=validate(conversationParamsSchema,request.params);const query=validate(listMessagesQuerySchema,request.query);const messages=await chatService.listMessages(userId(request),conversationId,query.beforeSequence,query.afterSequence,query.limit);return {messages,nextCursor:query.afterSequence===undefined&&messages.length===query.limit?messages[0]?.sequence:undefined};});
-  app.post('/presence',async request=>{const presence=await chatService.touchPresence(userId(request));return {lastSeenAt:presence.lastSeenAt};});
+  app.post('/presence',async request=>{const presence=await chatService.touchPresence(userId(request));return {lastSeenAt:presence!.lastSeenAt};});
   app.post('/conversations/:conversationId/receipt',async request=>{const {conversationId}=validate(conversationParamsSchema,request.params);const body=validate(updateReceiptRequestSchema,request.body);return chatService.updateReceipt(userId(request),conversationId,body.deliveredSequence,body.readSequence);});
   app.post('/conversations/:conversationId/messages',async(request,reply)=>{const {conversationId}=validate(conversationParamsSchema,request.params);const body=validate(sendMessageRequestSchema,request.body);const result=await chatService.sendMessage(userId(request),conversationId,body.clientMessageId,body.body);return reply.status(result.created?201:200).send({message:result.message,duplicate:!result.created});});
   app.patch('/conversations/:conversationId/messages/:messageId',async request=>{const params=validate(messageParamsSchema,request.params);const body=validate(editMessageRequestSchema,request.body);return {message:await chatService.editMessage(userId(request),params.conversationId,params.messageId,body.body)};});

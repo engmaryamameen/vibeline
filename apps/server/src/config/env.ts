@@ -39,7 +39,7 @@ const envSchema = z.object({
     const fields = [`${name}_CLIENT_ID`, `${name}_CLIENT_SECRET`, `${name}_CALLBACK_URL`] as const;
     const configured = fields.filter(field => Boolean(value[field]));
     if (configured.length > 0 && configured.length < fields.length) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [configured.length ? configured[0] : fields[0]], message: `${name} OAuth must provide client ID, client secret, and callback URL together` });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [configured[0] ?? fields[0]], message: `${name} OAuth must provide client ID, client secret, and callback URL together` });
     }
   };
   validateProvider('GOOGLE');

@@ -115,8 +115,8 @@ class OAuthService {
       email: googleUser.email.trim().toLowerCase(),
       emailVerified: googleUser.email_verified === true,
       displayName: googleUser.name || this.getDefaultDisplayName(googleUser.email),
-      firstName: googleUser.given_name?.trim() || null,
-      lastName: googleUser.family_name?.trim() || null,
+      firstName: googleUser.given_name?.trim() || undefined,
+      lastName: googleUser.family_name?.trim() || undefined,
       avatarUrl: googleUser.picture || null
     });
   }
@@ -144,7 +144,7 @@ class OAuthService {
       await authIdentityRepository.updateIdentityProfile(identity.id, payload.email, payload.emailVerified);
       if (!user.avatarUrl && payload.avatarUrl) await userRepository.update(user.id, { avatarUrl: payload.avatarUrl });
     } else {
-      const result = await authIdentityRepository.createOAuthAccount(payload);
+      const result = await authIdentityRepository.createOAuthAccount({ ...payload, firstName: payload.firstName ?? null, lastName: payload.lastName ?? null });
       if (result.kind === 'email-conflict') {
         throw new AppError(409, 'ACCOUNT_LINK_REQUIRED', 'An account with this email already exists. Sign in to that account before linking this provider.');
       }

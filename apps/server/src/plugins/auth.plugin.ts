@@ -1,7 +1,7 @@
 import fp from 'fastify-plugin';
 import fastifyJwt from '@fastify/jwt';
 
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { Role } from '@vibeline/contracts';
 
 import { AppError } from '@/common/errors/app-error';

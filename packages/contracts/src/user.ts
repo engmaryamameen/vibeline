@@ -20,6 +20,8 @@ export const userSearchResultSchema = z.object({
   avatarUrl: z.string().nullish().transform((value) => value ?? undefined)
 });
 export type UserSearchResult = z.infer<typeof userSearchResultSchema>;
+export const userSearchResponseSchema = z.object({ users: z.array(userSearchResultSchema) });
+export type UserSearchResponse = z.infer<typeof userSearchResponseSchema>;
 
 export const updateProfileRequestSchema = z
   .object({

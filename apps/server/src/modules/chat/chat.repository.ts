@@ -3,7 +3,6 @@ import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { conversationMemberReceipts, conversationMembers, conversations, messages, messageUserDeletions, userPresence, users } from '@/db/schema';
 
-type MemberRole = 'owner' | 'admin' | 'member';
 const activeMembership = (conversationId:string,userId:string) => and(eq(conversationMembers.conversationId,conversationId),eq(conversationMembers.userId,userId),isNull(conversationMembers.leftAt));
 
 class ChatRepository {
