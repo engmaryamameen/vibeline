@@ -1,5 +1,5 @@
 import type { User } from '@vibeline/contracts';
-import { and, eq, ilike, ne, or } from 'drizzle-orm';
+import { and, asc, eq, ilike, ne, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -49,7 +49,8 @@ class UserRepository {
   }
 
   async search(query: string, excludeUserId: string) {
-    const pattern = `%${query}%`;
+    const trimmed = query.trim();
+    const pattern = `%${trimmed}%`;
     return db
       .select({ id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl })
       .from(users)
@@ -57,10 +58,11 @@ class UserRepository {
         and(
           ne(users.id, excludeUserId),
           eq(users.emailVerified, true),
-          or(ilike(users.email, pattern), ilike(users.displayName, pattern))
+          ...(trimmed ? [or(ilike(users.email, pattern), ilike(users.displayName, pattern))!] : [])
         )
       )
-      .limit(20);
+      .orderBy(asc(users.displayName))
+      .limit(30);
   }
 
   async setEmailVerified(id: string) {
