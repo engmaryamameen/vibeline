@@ -7,7 +7,7 @@ export const chatApi=(request:AuthorizedRequest)=>({
  listMessages:(id:string,params:{before?:number;after?:number;limit?:number}={})=>{const q=new URLSearchParams();if(params.before!==undefined)q.set('beforeSequence',String(params.before));if(params.after!==undefined)q.set('afterSequence',String(params.after));q.set('limit',String(params.limit??50));return request(`/chat/conversations/${id}/messages?${q}`,{responseSchema:messagesResponseSchema});},
  sendMessage:(id:string,body:string,clientMessageId=crypto.randomUUID())=>request(`/chat/conversations/${id}/messages`,{method:'POST',body:{clientMessageId,body},responseSchema:messageResponseSchema}),
  editMessage:(id:string,messageId:string,body:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'PATCH',body:{body},responseSchema:messageResponseSchema}),
- deleteMessage:(id:string,messageId:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'DELETE',responseSchema:messageResponseSchema}),
+ deleteMessage:(id:string,messageId:string,scope:'me'|'everyone')=>request(`/chat/conversations/${id}/messages/${messageId}?scope=${scope}`,{method:'DELETE',responseSchema:messageResponseSchema}),
  getAssistantState:(id:string)=>request(`/chat/conversations/${id}/assistant`,{responseSchema:assistantStateResponseSchema}),
  enableAssistant:(id:string,displayName='Assistant')=>request(`/chat/conversations/${id}/assistant`,{method:'POST',body:{displayName},responseSchema:assistantEnableResponseSchema}),
  requestAssistantResponse:(id:string,clientRequestId:string)=>request(`/chat/conversations/${id}/assistant/responses`,{method:'POST',body:{clientRequestId},responseSchema:assistantResponseResponseSchema}),

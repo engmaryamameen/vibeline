@@ -121,6 +121,15 @@ export const messages = pgTable('messages', {
   check('messages_single_author_ck', sql`((${table.senderId} IS NOT NULL)::int + (${table.assistantId} IS NOT NULL)::int) = 1`)
 ]);
 
+export const messageUserDeletions = pgTable('message_user_deletions', {
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('message_user_deletions_message_user_uq').on(table.messageId, table.userId),
+  index('message_user_deletions_user_message_idx').on(table.userId, table.messageId)
+]);
+
 export const assistantGenerations = pgTable('assistant_generations', {
   id: text('id').primaryKey(),
   conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),

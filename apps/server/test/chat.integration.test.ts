@@ -67,10 +67,29 @@ dbTest('rejoining starts a new visibility period',async()=>{
 
 dbTest('message delete is idempotent and edit cannot resurrect a tombstone',async()=>{
   const sent=await chatService.sendMessage(ids.a,conversationId,randomUUID(),'delete me');
-  const first=await chatService.deleteMessage(ids.a,conversationId,sent.message.id);
-  const retry=await chatService.deleteMessage(ids.a,conversationId,sent.message.id);
+  const first=await chatService.deleteMessage(ids.a,conversationId,sent.message.id,'everyone');
+  const retry=await chatService.deleteMessage(ids.a,conversationId,sent.message.id,'everyone');
   assert.equal(first.id,retry.id);assert.ok(retry.deletedAt);assert.equal(retry.body,'');
   await assert.rejects(()=>chatService.editMessage(ids.a,conversationId,sent.message.id,'resurrect'),(e:any)=>e.code==='MESSAGE_DELETED');
+});
+
+dbTest('delete for me hides only the requesting member copy',async()=>{
+  const sent=await chatService.sendMessage(ids.a,conversationId,randomUUID(),'private delete');
+  await chatService.deleteMessage(ids.b,conversationId,sent.message.id,'me');
+  const hidden=await chatService.listMessages(ids.b,conversationId,undefined,undefined,100);
+  const retained=await chatService.listMessages(ids.a,conversationId,undefined,undefined,100);
+  assert.equal(hidden.some(message=>message.id===sent.message.id),false);
+  assert.equal(retained.some(message=>message.id===sent.message.id),true);
+});
+
+dbTest('conversation list keeps global deletion as a tombstone preview',async()=>{
+  const sent=await chatService.sendMessage(ids.a,conversationId,randomUUID(),'global delete preview');
+  await chatService.deleteMessage(ids.a,conversationId,sent.message.id,'everyone');
+  const list=await chatService.listConversations(ids.b);
+  const direct=list.find(conversation=>conversation.id===conversationId);
+  assert.equal(direct?.lastMessage,'');
+  assert.ok(direct?.lastMessageDeletedAt);
+  assert.equal(direct?.lastMessageSenderId,ids.a);
 });
 
 dbTest('catch-up after a sequence returns committed messages in ascending order',async()=>{

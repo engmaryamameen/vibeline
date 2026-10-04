@@ -83,12 +83,12 @@ class ChatService {
     return result.message;
   }
 
-  async deleteMessage(userId:string,conversationId:string,messageId:string){
-    const result=await chatRepository.deleteMessage(conversationId,userId,messageId);
+  async deleteMessage(userId:string,conversationId:string,messageId:string,scope:'me'|'everyone'){
+    const result=scope==='me'?await chatRepository.deleteMessageForUser(conversationId,userId,messageId):await chatRepository.deleteMessageForEveryone(conversationId,userId,messageId);
     if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');
-    if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can delete this message');
-    void this.publish(conversationId,'message.deleted',result.message);
+    if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can delete this message for everyone');
+    if(scope==='everyone')void this.publish(conversationId,'message.deleted',result.message);
     return result.message;
   }
 

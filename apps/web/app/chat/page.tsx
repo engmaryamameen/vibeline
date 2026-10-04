@@ -23,6 +23,7 @@ function ChatApp() {
           selectedId={chat.selectedId}
           loading={chat.loading}
           displayName={chat.currentUser?.displayName}
+          currentUserId={chat.currentUser?.id}
           search={chat.search}
           results={chat.searchResults}
           onSelect={chat.setSelectedId}
