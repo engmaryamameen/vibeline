@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Lock, Mail, User } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import {
   AuthField,
@@ -11,24 +11,35 @@ import {
   PasswordToggle,
   SocialAuth,
   SubmitButton
-} from '@/src/components/auth/auth-surface';
+} from '@/src/features/auth/components/auth-surface';
 import { useRegister } from '@/src/features/auth/hooks/use-register';
 import { env } from '@/src/lib/env';
 
 export default function RegisterPage() {
-  const { loading, error, success, showPassword, onSubmit, togglePasswordVisibility } = useRegister();
+  const {
+    loading,
+    error,
+    fieldErrors,
+    success,
+    showPassword,
+    onSubmit,
+    clearFieldError,
+    togglePasswordVisibility
+  } = useRegister();
 
   return (
     <AuthPage>
       <AuthHeader title="Create account" description="Set up your space and start a conversation in a few seconds." />
 
-      <form className="space-y-5" onSubmit={onSubmit} aria-label="Registration form">
+      <form className="space-y-5" onSubmit={onSubmit} aria-label="Registration form" noValidate>
         <AuthField
           label="Name"
           id="displayName"
           name="displayName"
           autoComplete="name"
           placeholder="Enter your name"
+          error={fieldErrors.displayName}
+          onChange={() => clearFieldError('displayName')}
         />
         <AuthField
           label="Email"
@@ -37,6 +48,8 @@ export default function RegisterPage() {
           type="email"
           autoComplete="email"
           placeholder="Enter your email address"
+          error={fieldErrors.email}
+          onChange={() => clearFieldError('email')}
         />
         <AuthField
           label="Password"
@@ -45,7 +58,8 @@ export default function RegisterPage() {
           type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           placeholder="At least 8 characters"
-          minLength={8}
+          error={fieldErrors.password}
+          onChange={() => clearFieldError('password')}
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
 

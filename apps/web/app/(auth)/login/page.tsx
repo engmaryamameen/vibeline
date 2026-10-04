@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import {
   AuthField,
@@ -11,7 +11,7 @@ import {
   PasswordToggle,
   SocialAuth,
   SubmitButton
-} from '@/src/components/auth/auth-surface';
+} from '@/src/features/auth/components/auth-surface';
 import { useLogin } from '@/src/features/auth/hooks/use-login';
 import { env } from '@/src/lib/env';
 
@@ -21,9 +21,11 @@ export default function LoginPage() {
     resending,
     error,
     errorCode,
+    fieldErrors,
     resendSuccess,
     showPassword,
     onSubmit,
+    clearFieldError,
     resendVerification,
     togglePasswordVisibility
   } = useLogin();
@@ -32,7 +34,7 @@ export default function LoginPage() {
     <AuthPage>
       <AuthHeader title="Login" description="Welcome back. Continue your conversations from where you left them." />
 
-      <form className="space-y-5" onSubmit={onSubmit} aria-label="Login form">
+      <form className="space-y-5" onSubmit={onSubmit} aria-label="Login form" noValidate>
         <AuthField
           label="Email"
           id="email"
@@ -40,6 +42,8 @@ export default function LoginPage() {
           type="email"
           autoComplete="email"
           placeholder="Enter your email address"
+          error={fieldErrors.email}
+          onChange={() => clearFieldError('email')}
         />
 
         <AuthField
@@ -54,6 +58,8 @@ export default function LoginPage() {
           type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           placeholder="Enter your password"
+          error={fieldErrors.password}
+          onChange={() => clearFieldError('password')}
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
 

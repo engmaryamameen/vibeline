@@ -2,7 +2,7 @@
 
 import { PageShell } from '@vibeline/ui';
 
-import { AuthGuard } from '@/src/components/auth/auth-guard';
+import { AuthGuard } from '@/src/features/auth/components/auth-guard';
 import { ConversationSidebar } from '@/src/features/chat/components/conversation-sidebar';
 import { ConversationThread } from '@/src/features/chat/components/conversation-thread';
 import { useChatWorkspace } from '@/src/features/chat/hooks/use-chat-workspace';

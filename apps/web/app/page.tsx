@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, MessageCircleMore, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { Button, PageShell } from '@vibeline/ui';
-import { AuthGuard } from '@/src/components/auth/auth-guard';
-import { Brand } from '@/src/components/auth/auth-surface';
+import { AuthGuard } from '@/src/features/auth/components/auth-guard';
+import { Brand } from '@/src/features/auth/components/auth-surface';
 import { env } from '@/src/lib/env';
 
 export default function HomePage() {

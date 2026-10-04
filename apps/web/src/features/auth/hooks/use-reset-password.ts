@@ -4,6 +4,13 @@ import { useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { apiClient, ApiError } from '@/src/lib/api-client';
+import {
+  hasFieldErrors,
+  validateResetPasswordFields,
+  type FieldErrors
+} from '@/src/features/auth/validation';
+
+type ResetPasswordField = 'password' | 'confirmPassword';
 
 export function useResetPassword() {
   const router = useRouter();
@@ -12,9 +19,19 @@ export function useResetPassword() {
   const code = searchParams.get('code');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<ResetPasswordField>>({});
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const clearFieldError = (field: ResetPasswordField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,16 +40,11 @@ export function useResetPassword() {
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get('password') ?? '');
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
+    const validationErrors = validateResetPasswordFields(password, confirmPassword);
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+    setFieldErrors(validationErrors);
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
+    if (hasFieldErrors(validationErrors)) return;
 
     setLoading(true);
 
@@ -57,11 +69,13 @@ export function useResetPassword() {
   return {
     loading,
     error,
+    fieldErrors,
     success,
     showPassword,
     showConfirmPassword,
     hasResetCredential: Boolean(token || code),
     onSubmit,
+    clearFieldError,
     togglePasswordVisibility: () => setShowPassword((visible) => !visible),
     toggleConfirmPasswordVisibility: () => setShowConfirmPassword((visible) => !visible)
   };

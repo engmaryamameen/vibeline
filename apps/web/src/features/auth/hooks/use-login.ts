@@ -6,6 +6,13 @@ import { useRouter } from 'next/navigation';
 import { apiClient, ApiError } from '@/src/lib/api-client';
 import { useAuthStore } from '@/src/store/auth.store';
 import type { AuthResponse } from '@/src/features/auth/types';
+import {
+  hasFieldErrors,
+  validateLoginFields,
+  type FieldErrors
+} from '@/src/features/auth/validation';
+
+type LoginField = 'email' | 'password';
 
 export function useLogin() {
   const router = useRouter();
@@ -14,22 +21,37 @@ export function useLogin() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginField>>({});
   const [email, setEmail] = useState('');
   const [resendSuccess, setResendSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const clearFieldError = (field: LoginField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setErrorCode(null);
     setResendSuccess(false);
-    setLoading(true);
 
     const data = new FormData(event.currentTarget);
     const emailValue = String(data.get('email') ?? '').trim();
     const password = String(data.get('password') ?? '');
+    const validationErrors = validateLoginFields(emailValue, password);
 
     setEmail(emailValue);
+    setFieldErrors(validationErrors);
+
+    if (hasFieldErrors(validationErrors)) return;
+
+    setLoading(true);
 
     try {
       const response = await apiClient<AuthResponse>('/auth/login', {
@@ -80,9 +102,11 @@ export function useLogin() {
     resending,
     error,
     errorCode,
+    fieldErrors,
     resendSuccess,
     showPassword,
     onSubmit,
+    clearFieldError,
     resendVerification,
     togglePasswordVisibility: () => setShowPassword((visible) => !visible)
   };

@@ -5,10 +5,27 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        shone: ['Söhne', 'system-ui', '-apple-system', 'sans-serif'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        poppins: ['Poppins', 'sans-serif']
+        sans: [
+          'Lato',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'sans-serif'
+        ],
+        display: [
+          'Poppins',
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif'
+        ],
+        inter: [
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif'
+        ]
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }],

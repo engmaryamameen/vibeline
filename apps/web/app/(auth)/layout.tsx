@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { AuthGuard } from '@/src/components/auth/auth-guard';
-import { AuthShell } from '@/src/components/auth/auth-surface';
+import { AuthGuard } from '@/src/features/auth/components/auth-guard';
+import { AuthShell } from '@/src/features/auth/components/auth-surface';
 
 type AuthLayoutProps = {
   children: ReactNode;

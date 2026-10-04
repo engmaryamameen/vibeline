@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Lock, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, XCircle } from 'lucide-react';
 
 import {
   AuthField,
@@ -13,7 +13,7 @@ import {
   PasswordToggle,
   authPrimaryClassName,
   SubmitButton
-} from '@/src/components/auth/auth-surface';
+} from '@/src/features/auth/components/auth-surface';
 import { cn } from '@vibeline/utils';
 import { useResetPassword } from '@/src/features/auth/hooks/use-reset-password';
 
@@ -21,11 +21,13 @@ function ResetPasswordContent() {
   const {
     loading,
     error,
+    fieldErrors,
     success,
     showPassword,
     showConfirmPassword,
     hasResetCredential,
     onSubmit,
+    clearFieldError,
     togglePasswordVisibility,
     toggleConfirmPasswordVisibility
   } = useResetPassword();
@@ -66,7 +68,7 @@ function ResetPasswordContent() {
   return (
     <AuthPage>
       <AuthHeader title="Create a new password" description="Choose a password you haven’t used here before." />
-      <form className="space-y-5" onSubmit={onSubmit}>
+      <form className="space-y-5" onSubmit={onSubmit} noValidate>
         <AuthField
           label="New password"
           id="password"
@@ -74,6 +76,8 @@ function ResetPasswordContent() {
           type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           placeholder="At least 8 characters"
+          error={fieldErrors.password}
+          onChange={() => clearFieldError('password')}
           trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
         />
         <AuthField
@@ -83,6 +87,8 @@ function ResetPasswordContent() {
           type={showConfirmPassword ? 'text' : 'password'}
           autoComplete="new-password"
           placeholder="Enter it again"
+          error={fieldErrors.confirmPassword}
+          onChange={() => clearFieldError('confirmPassword')}
           trailing={<PasswordToggle visible={showConfirmPassword} onClick={toggleConfirmPasswordVisibility} />}
         />
         {error && <AuthNotice>{error}</AuthNotice>}
