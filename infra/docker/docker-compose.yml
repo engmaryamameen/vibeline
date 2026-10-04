@@ -9,6 +9,7 @@ services:
       - '3000:3000'
     depends_on:
       - server
+    restart: unless-stopped
 
   server:
     build:
@@ -21,9 +22,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped 
 
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: vibeline
       POSTGRES_USER: postgres

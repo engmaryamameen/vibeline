@@ -3,8 +3,6 @@ import { rateLimit } from '@/middleware/rate-limit';
 
 import {
   forgotPasswordHandler,
-  githubAuthHandler,
-  githubCallbackHandler,
   googleAuthHandler,
   googleCallbackHandler,
   loginHandler,
@@ -34,7 +32,4 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   app.get('/google', googleAuthHandler);
   app.get('/google/callback', googleCallbackHandler);
 
-  // GitHub OAuth
-  app.get('/github', githubAuthHandler);
-  app.get('/github/callback', githubCallbackHandler);
 };

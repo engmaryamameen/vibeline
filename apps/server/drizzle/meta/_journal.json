@@ -57,6 +57,20 @@
       "when": 1771621438512,
       "tag": "0007_assistant_generation_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771621438513,
+      "tag": "0008_remove_github_oauth",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791102600000,
+      "tag": "0009_user_profile_fields",
+      "breakpoints": true
     }
   ]
 }
