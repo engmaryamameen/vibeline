@@ -26,7 +26,7 @@ docs/
 - Access token + refresh token session model
 - Email verification (token + code)
 - Password reset (token + code)
-- OAuth callback handling (Google + GitHub)
+- OAuth callback handling (Google)
 - Protected route guard and `/users/me` profile bootstrap
 
 ## Quick Start

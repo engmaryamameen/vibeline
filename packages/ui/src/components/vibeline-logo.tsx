@@ -30,7 +30,6 @@ function VMark({ size }: { size: number }) {
   );
 }
 
-
 export function VibeLineLogo({
   size = 'md',
   variant = 'dark',
@@ -40,8 +39,8 @@ export function VibeLineLogo({
 
   const boxClasses =
     variant === 'light'
-      ? 'bg-white/20 backdrop-blur-sm'
-      : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25';
+      ? 'bg-white/15 ring-1 ring-white/15 backdrop-blur-sm'
+      : 'bg-gradient-to-br from-emerald-500 to-teal-700 shadow-lg shadow-emerald-700/20';
 
   return (
     <div

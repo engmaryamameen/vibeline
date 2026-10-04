@@ -12,9 +12,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-surface-bg hover:bg-accent-hover active:bg-accent-hover shadow-sm',
+    'bg-accent text-white hover:bg-accent-hover active:bg-accent-hover shadow-sm shadow-accent/15',
   secondary:
-    'bg-surface-elevated text-content-primary border border-border hover:bg-surface-hover active:bg-surface-soft',
+    'bg-surface-elevated text-content-primary border border-border hover:border-border-strong hover:bg-surface-hover active:bg-surface-soft',
   ghost:
     'bg-transparent text-content-secondary hover:text-content-primary hover:bg-surface-hover active:bg-surface-soft',
   danger:
@@ -30,8 +30,9 @@ const sizeStyles: Record<ButtonSize, string> = {
 export const Button = ({ className, variant = 'primary', size = 'md', ...props }: ButtonProps) => (
   <button
     className={cn(
-      'inline-flex items-center justify-center rounded-md font-medium transition-colors duration-150',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-bg',
+      'inline-flex items-center justify-center rounded-md font-medium',
+      'transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out',
+      'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/15',
       'disabled:pointer-events-none disabled:opacity-50',
       variantStyles[variant],
       sizeStyles[size],

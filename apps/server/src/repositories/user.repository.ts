@@ -6,10 +6,14 @@ import type { InferSelectModel } from 'drizzle-orm';
 
 export type StoredUser = InferSelectModel<typeof users>;
 
-const toPublicUser = (row: StoredUser): User => ({
+export const toPublicUser = (row: StoredUser): User => ({
   id: row.id,
   email: row.email,
   displayName: row.displayName,
+  firstName: row.firstName ?? undefined,
+  lastName: row.lastName ?? undefined,
+  dateOfBirth: row.dateOfBirth ?? undefined,
+  phoneNumber: row.phoneNumber,
   avatarUrl: row.avatarUrl ?? undefined,
   role: row.role as User['role'],
   emailVerified: row.emailVerified,
@@ -17,10 +21,21 @@ const toPublicUser = (row: StoredUser): User => ({
 });
 
 class UserRepository {
-  findByEmail(email: string) { return db.query.users.findFirst({ where: ilike(users.email, email) }).then(row => row ?? null); }
-  findById(id: string) { return db.query.users.findFirst({ where: eq(users.id, id) }).then(row => row ?? null); }
-  findByVerificationToken(token: string) { return db.query.users.findFirst({ where: eq(users.verificationToken, token) }).then(row => row ?? null); }
-  findByVerificationCode(code: string) { return db.query.users.findFirst({ where: eq(users.verificationCode, code) }).then(row => row ?? null); }
+  findByEmail(email: string) {
+    return db.query.users.findFirst({ where: ilike(users.email, email) }).then((row) => row ?? null);
+  }
+
+  findById(id: string) {
+    return db.query.users.findFirst({ where: eq(users.id, id) }).then((row) => row ?? null);
+  }
+
+  findByVerificationToken(token: string) {
+    return db.query.users.findFirst({ where: eq(users.verificationToken, token) }).then((row) => row ?? null);
+  }
+
+  findByVerificationCode(code: string) {
+    return db.query.users.findFirst({ where: eq(users.verificationCode, code) }).then((row) => row ?? null);
+  }
 
   async create(payload: Omit<StoredUser, 'createdAt'> & { createdAt?: Date }) {
     const [row] = await db.insert(users).values(payload).returning();
@@ -35,11 +50,27 @@ class UserRepository {
 
   async search(query: string, excludeUserId: string) {
     const pattern = `%${query}%`;
-    return db.select({ id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users).where(and(ne(users.id, excludeUserId), eq(users.emailVerified, true), or(ilike(users.email, pattern), ilike(users.displayName, pattern)))).limit(20);
+    return db
+      .select({ id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl })
+      .from(users)
+      .where(
+        and(
+          ne(users.id, excludeUserId),
+          eq(users.emailVerified, true),
+          or(ilike(users.email, pattern), ilike(users.displayName, pattern))
+        )
+      )
+      .limit(20);
   }
 
   async setEmailVerified(id: string) {
-    return this.update(id, { emailVerified: true, verificationToken: null, verificationCode: null, verificationTokenExpiresAt: null });
+    return this.update(id, {
+      emailVerified: true,
+      verificationToken: null,
+      verificationCode: null,
+      verificationTokenExpiresAt: null
+    });
   }
 }
+
 export const userRepository = new UserRepository();

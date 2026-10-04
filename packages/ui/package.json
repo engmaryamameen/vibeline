@@ -11,16 +11,17 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "peerDependencies": {
-    "react": "^18.3.1 || ^19.0.0",
-    "react-dom": "^18.3.1 || ^19.0.0"
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "dependencies": {
     "@vibeline/utils": "workspace:*"
   },
   "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "^5.6.3",
     "@types/node": "^22.10.1",
-    "@types/react": "^18.3.12",
-    "eslint": "^9.14.0",
-    "typescript": "^5.6.3"
+    "eslint": "^9.14.0"
   }
 }
