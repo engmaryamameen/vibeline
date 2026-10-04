@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { AuthField, AuthHeader, AuthNotice, AuthPage, SubmitButton, authPrimaryClassName } from '@/src/features/auth/components/auth-surface';
+import { AuthField, AuthFields, AuthForm, AuthHeader, AuthNotice, AuthPage, SubmitButton, authPrimaryClassName } from '@/src/features/auth/components/auth-surface';
 import { cn } from '@vibeline/utils';
 import { useForgotPassword } from '@/src/features/auth/hooks/use-forgot-password';
 
@@ -30,9 +30,10 @@ export default function ForgotPasswordPage() {
         <>
           <AuthHeader
             title="Reset password"
-            description="Enter your email and we’ll send recovery instructions if an account exists."
+            description="Enter your email and we’ll send you instructions to reset your password."
           />
-          <form className="space-y-5" onSubmit={onSubmit} noValidate>
+          <AuthForm onSubmit={onSubmit}>
+            <AuthFields>
             <AuthField
               id="email"
               name="email"
@@ -44,10 +45,12 @@ export default function ForgotPasswordPage() {
               onChange={() => clearFieldError('email')}
             />
             {error && <AuthNotice>{error}</AuthNotice>}
+            </AuthFields>
+
             <SubmitButton loading={loading} loadingLabel="Sending…">
               Send recovery link
             </SubmitButton>
-          </form>
+          </AuthForm>
         </>
       ) : (
         <>

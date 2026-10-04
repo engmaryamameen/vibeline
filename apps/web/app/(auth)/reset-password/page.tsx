@@ -6,6 +6,8 @@ import { ArrowRight, CheckCircle2, XCircle } from 'lucide-react';
 
 import {
   AuthField,
+  AuthFields,
+  AuthForm,
   AuthHeader,
   AuthNotice,
   AuthPage,
@@ -68,7 +70,8 @@ function ResetPasswordContent() {
   return (
     <AuthPage>
       <AuthHeader title="Create a new password" description="Choose a password you haven’t used here before." />
-      <form className="space-y-5" onSubmit={onSubmit} noValidate>
+      <AuthForm onSubmit={onSubmit}>
+        <AuthFields>
         <AuthField
           label="New password"
           id="password"
@@ -92,8 +95,10 @@ function ResetPasswordContent() {
           trailing={<PasswordToggle visible={showConfirmPassword} onClick={toggleConfirmPasswordVisibility} />}
         />
         {error && <AuthNotice>{error}</AuthNotice>}
+        </AuthFields>
+
         <SubmitButton loading={loading} loadingLabel="Updating…">Reset password</SubmitButton>
-      </form>
+      </AuthForm>
     </AuthPage>
   );
 }

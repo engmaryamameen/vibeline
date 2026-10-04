@@ -3,7 +3,7 @@ import type { Role } from '@vibeline/contracts';
 import { AppError } from '@/common/errors/app-error';
 import { env } from '@/config/env';
 type JwtUserPayload={id:string;email:string;role:Role};
-type OAuthProvider='google'|'github';
+type OAuthProvider='google';
 type OAuthStatePayload={provider:OAuthProvider;type:'oauth_state'};
 export const signAccessToken=(user:JwtUserPayload)=>jwt.sign({sub:user.id,email:user.email,role:user.role,type:'access'},env.JWT_SECRET,{expiresIn:env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn']});
 export const signOAuthState=(provider:OAuthProvider)=>jwt.sign({provider,type:'oauth_state'} satisfies OAuthStatePayload,env.OAUTH_STATE_SECRET,{expiresIn:'10m'});

@@ -5,6 +5,8 @@ import { ArrowRight } from 'lucide-react';
 
 import {
   AuthField,
+  AuthFields,
+  AuthForm,
   AuthHeader,
   AuthNotice,
   AuthPage,
@@ -29,57 +31,66 @@ export default function RegisterPage() {
 
   return (
     <AuthPage>
-      <AuthHeader title="Create account" description="Set up your space and start a conversation in a few seconds." />
+      <AuthHeader
+        title="Join Now"
+        description="SSet up your space and start chatting right away."
+        action={
+          <>
+            Already have an account?{' '}
+            <Link
+              href="/login"
+              className="font-medium text-content-link transition-colors hover:text-accent"
+            >
+              Login
+            </Link>
+          </>
+        }
+      />
+      <AuthForm onSubmit={onSubmit}>
+        <AuthFields>
+          <AuthField
+            label="Name"
+            id="displayName"
+            name="displayName"
+            autoComplete="name"
+            placeholder="Enter your name"
+            error={fieldErrors.displayName}
+            onChange={() => clearFieldError('displayName')}
+          />
+          <AuthField
+            label="Email"
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="Enter your email address"
+            error={fieldErrors.email}
+            onChange={() => clearFieldError('email')}
+          />
+          <AuthField
+            label="Password"
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            placeholder="At least 8 characters"
+            error={fieldErrors.password}
+            onChange={() => clearFieldError('password')}
+            trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
+          />
 
-      <form className="space-y-5" onSubmit={onSubmit} aria-label="Registration form" noValidate>
-        <AuthField
-          label="Name"
-          id="displayName"
-          name="displayName"
-          autoComplete="name"
-          placeholder="Enter your name"
-          error={fieldErrors.displayName}
-          onChange={() => clearFieldError('displayName')}
-        />
-        <AuthField
-          label="Email"
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Enter your email address"
-          error={fieldErrors.email}
-          onChange={() => clearFieldError('email')}
-        />
-        <AuthField
-          label="Password"
-          id="password"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          autoComplete="new-password"
-          placeholder="At least 8 characters"
-          error={fieldErrors.password}
-          onChange={() => clearFieldError('password')}
-          trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
-        />
+          {success && <AuthNotice tone="success">Account created. Check your inbox to verify your email.</AuthNotice>}
+          {error && <AuthNotice>{error}</AuthNotice>}
 
-        {success && <AuthNotice tone="success">Account created. Check your inbox to verify your email.</AuthNotice>}
-        {error && <AuthNotice>{error}</AuthNotice>}
+        </AuthFields>
 
         <SubmitButton loading={loading} loadingLabel="Creating account…">
           <span>Create account</span>
           <ArrowRight className="h-4 w-4" />
         </SubmitButton>
-      </form>
+      </AuthForm>
 
       <SocialAuth apiBaseUrl={env.apiBaseUrl} />
-
-      <p className="mt-7 text-center text-sm text-content-secondary">
-        Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-accent transition-colors hover:text-accent-hover">
-          Login
-        </Link>
-      </p>
     </AuthPage>
   );
 }

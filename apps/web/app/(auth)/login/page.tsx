@@ -5,6 +5,8 @@ import { ArrowRight } from 'lucide-react';
 
 import {
   AuthField,
+  AuthFields,
+  AuthForm,
   AuthHeader,
   AuthNotice,
   AuthPage,
@@ -32,10 +34,23 @@ export default function LoginPage() {
 
   return (
     <AuthPage>
-      <AuthHeader title="Login" description="Welcome back. Continue your conversations from where you left them." />
-
-      <form onSubmit={onSubmit} className='space-y-8' aria-label="Login form" noValidate>
-        <div className='space-y-3'>
+      <AuthHeader
+        title="Login"
+        description="Welcome back. Continue where you left off."
+        action={
+          <>
+            Don&apos;t have an account?{' '}
+            <Link
+              href="/register"
+              className="font-medium text-content-link transition-colors hover:text-accent"
+            >
+              Register
+            </Link>
+          </>
+        }
+      />
+      <AuthForm onSubmit={onSubmit} aria-label="Login form">
+        <AuthFields>
           <AuthField
             label="Email"
             id="email"
@@ -89,22 +104,15 @@ export default function LoginPage() {
           )}
 
           {resendSuccess && <AuthNotice tone="success">Verification email sent. Check your inbox.</AuthNotice>}
-        </div>
+        </AuthFields>
 
         <SubmitButton loading={loading} loadingLabel="Signing in…">
           <span>Login</span>
           <ArrowRight className="h-4 w-4" />
         </SubmitButton>
-      </form>
+      </AuthForm>
 
       <SocialAuth apiBaseUrl={env.apiBaseUrl} />
-
-      <p className="mt-7 text-center text-sm text-content-secondary">
-        Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-semibold text-accent transition-colors hover:text-accent-hover">
-          Register
-        </Link>
-      </p>
     </AuthPage>
   );
 }

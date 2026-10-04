@@ -15,7 +15,7 @@ export const users = pgTable('users', {
 });
 
 
-export const authProvider = pgEnum('auth_provider', ['google', 'github']);
+export const authProvider = pgEnum('auth_provider', ['google']);
 
 export const passwordCredentials = pgTable('password_credentials', {
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),

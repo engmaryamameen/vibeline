@@ -152,58 +152,11 @@ export const googleCallbackHandler = async (
 
     return reply.redirect(`${env.APP_URL}/auth/callback`);
   } catch (err) {
-    logger.error({ error: err }, 'Google OAuth callback failed');
+    logger.error({ error: error }, 'Google OAuth callback failed');
     return reply.redirect(getOAuthCallbackErrorUrl(err instanceof AppError ? err.code.toLowerCase() : 'oauth_failed'));
   }
 };
 
-export const githubAuthHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const state = signOAuthState('github');
-    const authUrl = oauthService.getGithubAuthUrl(state);
-    return reply.redirect(authUrl);
-  } catch (error) {
-    logger.error({ error }, 'GitHub OAuth not configured');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_not_configured'));
-  }
-};
-
-export const githubCallbackHandler = async (
-  request: FastifyRequest<{ Querystring: { code?: string; error?: string; state?: string } }>,
-  reply: FastifyReply
-) => {
-  const { code, error, state } = request.query;
-
-  if (error) {
-    logger.warn({ error }, 'GitHub OAuth error');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_denied'));
-  }
-
-  if (!code) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_no_code'));
-  }
-
-  if (!state) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    verifyOAuthState(state, 'github');
-  } catch (err) {
-    logger.warn({ error: err }, 'Invalid GitHub OAuth state');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    const result = await oauthService.handleGithubCallback(code);
-    reply.header('Set-Cookie', buildRefreshTokenCookie(result.tokens.refreshToken));
-
-    return reply.redirect(`${env.APP_URL}/auth/callback`);
-  } catch (err) {
-    logger.error({ error: err }, 'GitHub OAuth callback failed');
-    return reply.redirect(getOAuthCallbackErrorUrl(err instanceof AppError ? err.code.toLowerCase() : 'oauth_failed'));
-  }
-};
 
 export const changePasswordHandler = async (request: FastifyRequest, reply: FastifyReply) => { const payload = validate(changePasswordSchema, request.body); const result = await authService.changePassword(request.user.sub, payload); reply.header('Set-Cookie', buildClearRefreshTokenCookie()); return reply.status(200).send(result); };
 

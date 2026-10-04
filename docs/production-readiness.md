@@ -3,7 +3,7 @@
 ## Implemented in application code
 
 - Email/password registration, verification, login, refresh, logout, reset and password change.
-- Google/GitHub OAuth foundation with state validation and cookie-based session handoff.
+- Google OAuth foundation with state validation and cookie-based session handoff.
 - Verified-account enforcement before authenticated sessions are issued.
 - Opaque, hashed, rotating refresh sessions with reuse detection and revocation.
 - In-memory-only access JWT handling in the browser; no access token in OAuth callback URLs.
@@ -32,7 +32,7 @@
 - TLS/domain and edge/proxy security policy.
 - Managed PostgreSQL, backups, PITR, tested restore procedure, RPO/RTO targets.
 - SMTP credentials and deliverability configuration.
-- Google/GitHub OAuth credentials and production callback registration.
+- Google OAuth credentials and production callback registration.
 - Secret manager rather than plaintext deployment environment files.
 - Metrics/log aggregation/alerting backend.
 - Shared realtime/rate-limit infrastructure only when horizontal requirements justify it; it is not required for the current single-process guarantees.

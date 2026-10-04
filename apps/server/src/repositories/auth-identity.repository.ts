@@ -3,7 +3,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { externalIdentities, passwordCredentials, users } from '@/db/schema';
 
-export type AuthProvider = 'google' | 'github';
+export type AuthProvider = 'google';
 
 class AuthIdentityRepository {
   async createPasswordAccount(payload: { userId: string; email: string; displayName: string; passwordHash: string; verificationToken: string; verificationCode: string; verificationTokenExpiresAt: Date }) {

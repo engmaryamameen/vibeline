@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentType, InputHTMLAttributes, ReactNode } from 'react';
+import type { ComponentType, FormHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
 import {
   AlertCircle,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Input, PageShell } from '@vibeline/ui';
 import { cn } from '@vibeline/utils';
-import { GitHubIcon, GoogleIcon } from '../assets/svg/social-links';
+import { GoogleIcon } from '../assets/svg/social-links';
 
 export const authPrimaryClassName =
   'bg-[#2B8761] text-white shadow-[0_10px_28px_rgba(43,135,97,0.20)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:-translate-y-px hover:bg-[#206649] hover:shadow-[0_14px_32px_rgba(43,135,97,0.27)] disabled:translate-y-0 disabled:shadow-none disabled:opacity-50 motion-reduce:transition-none';
@@ -102,15 +102,41 @@ export function AuthPage({ children }: { children: ReactNode }) {
   return <div className="animate-auth-route motion-reduce:animate-none">{children}</div>;
 }
 
-export function AuthHeader({ title, description }: { title: string; description: string }) {
+export function AuthForm({ className, ...props }: FormHTMLAttributes<HTMLFormElement>) {
+  return <form className={cn('space-y-8', className)} noValidate {...props} />;
+}
+
+export function AuthFields({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('space-y-3', className)} {...props} />;
+}
+
+export function AuthHeader({
+  title,
+  description,
+  action
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
-    <header className="lg:mb-4 md:mb-4 xl:mb-4 sm:mb-10 mb-10">
-      <h1 className="text-[2rem] sm:text-center md:text-start lg:text-start xl:text-start text-center font-display font-bold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem]">
+    <header className="mb-10 sm:mb-6">
+      <h1 className="text-center font-display text-[2rem] font-bold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem] md:text-left">
         {title}
       </h1>
-      <p className="hidden sm:hidden lg:block  mt-1 max-w-sm text-sm leading-6 text-content-secondary sm:text-[15px]">
-        {description}
-      </p>
+
+      {(description || action) && (
+        <div className="mt-2 max-w-sm text-center text-sm leading-6 text-content-secondary md:text-left">
+          {description && <span>{description}</span>}
+
+          {action && (
+            <>
+              {description && ' '}
+              {action}
+            </>
+          )}
+        </div>
+      )}
     </header>
   );
 }
@@ -256,28 +282,19 @@ export function SubmitButton({ loading, children, loadingLabel }: { loading: boo
 
 export function SocialAuth({ apiBaseUrl }: { apiBaseUrl: string }) {
   return (
-    <>
+    <div className="mt-auto mb-0 pt-16 md:pt-6">
       <div className="my-7 flex items-center gap-4">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-xs text-content-muted">
-          or continue with
-        </span>
+        <span className="text-xs text-content-muted">or continue with</span>
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <SocialLink
-          href={`${apiBaseUrl}/auth/google`}
-          label="Continue with Google"
-          icon={<GoogleIcon />}
-        />
-        <SocialLink
-          href={`${apiBaseUrl}/auth/github`}
-          label="Continue with GitHub"
-          icon={<GitHubIcon />}
-        />
-      </div>
-    </>
+      <SocialLink
+        href={`${apiBaseUrl}/auth/google`}
+        label="Continue with Google"
+        icon={<GoogleIcon />}
+      />
+    </div>
   );
 }
 
@@ -295,7 +312,7 @@ function SocialLink({
       href={href}
       className="
         box-border flex h-[54px] w-full items-center justify-center gap-2
-        rounded-full border-2 border-[#E2E8F0] bg-white px-6 lg:px-3 md:px-3 xl:px-3 py-2
+        rounded-full border-2 border-[#E2E8F0] bg-white px-6 py-2
         text-sm font-medium leading-5 tracking-[0.015em] text-[#1E293B]
         transition-[border-color,background-color] duration-150 ease-out
         hover:border-[#CBD5E1] hover:bg-[#F8FAFC]

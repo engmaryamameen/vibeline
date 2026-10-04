@@ -32,7 +32,7 @@ This keeps HTTP concerns out of business logic and keeps persistence isolated fo
 - Login with verified email requirement
 - Email verification via token or 6-digit code
 - Password reset via token or 6-digit code
-- OAuth initiation + callback handling for Google and GitHub
+- OAuth initiation + callback handling for Google
 
 ## Operational model
 
