@@ -18,7 +18,7 @@ import { cn } from '@vibeline/utils';
 import { GitHubIcon, GoogleIcon } from '../assets/svg/social-links';
 
 export const authPrimaryClassName =
-  'bg-accent text-white shadow-[0_10px_28px_rgb(var(--accent-primary)/0.20)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_14px_32px_rgb(var(--accent-primary)/0.27)] disabled:translate-y-0 disabled:shadow-none motion-reduce:transition-none';
+  'bg-[#2B8761] text-white shadow-[0_10px_28px_rgba(43,135,97,0.20)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:-translate-y-px hover:bg-[#206649] hover:shadow-[0_14px_32px_rgba(43,135,97,0.27)] disabled:translate-y-0 disabled:shadow-none disabled:opacity-50 motion-reduce:transition-none';
 
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
@@ -104,11 +104,11 @@ export function AuthPage({ children }: { children: ReactNode }) {
 
 export function AuthHeader({ title, description }: { title: string; description: string }) {
   return (
-    <header className="mb-4">
-      <h1 className="text-[2rem] font-display font-bold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem]">
+    <header className="lg:mb-4 md:mb-4 xl:mb-4 sm:mb-10 mb-10">
+      <h1 className="text-[2rem] sm:text-center md:text-start lg:text-start xl:text-start text-center font-display font-bold leading-[1.05] tracking-[-0.045em] text-content-primary sm:text-[2.3rem]">
         {title}
       </h1>
-      <p className="mt-1 max-w-sm text-sm leading-6 text-content-secondary sm:text-[15px]">
+      <p className="hidden sm:hidden lg:block  mt-1 max-w-sm text-sm leading-6 text-content-secondary sm:text-[15px]">
         {description}
       </p>
     </header>
@@ -119,7 +119,7 @@ type AuthFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   icon?: ComponentType<LucideProps>;
   trailing?: ReactNode;
-  labelAction?: ReactNode;
+  fieldAction?: ReactNode;
   error?: string;
 };
 
@@ -127,7 +127,7 @@ export function AuthField({
   label,
   icon: Icon,
   trailing,
-  labelAction,
+  fieldAction,
   error,
   className,
   id,
@@ -139,12 +139,8 @@ export function AuthField({
 
   return (
     <label className="block" htmlFor={fieldId}>
-      <span className="mb-2 flex min-h-5 items-center justify-between gap-3">
-        <span className="text-sm font-medium text-content-primary">
-          {label}
-        </span>
-
-        {labelAction}
+      <span className="mb-2 block text-sm font-medium text-content-primary">
+        {label}
       </span>
 
       <span className="group relative block">
@@ -175,14 +171,26 @@ export function AuthField({
         {trailing}
       </span>
 
-      {error && (
-        <span
-          id={errorId}
-          role="alert"
-          className="mt-1.5 flex items-center gap-2 text-sm leading-[22px] text-status-error"
-        >
-          <Info className="h-5 w-5 shrink-0" />
-          <span>{error}</span>
+      {(error || fieldAction) && (
+        <span className="mt-1.5 flex items-start justify-between gap-3">
+          <span className="min-w-0 flex-1">
+            {error && (
+              <span
+                id={errorId}
+                role="alert"
+                className="flex items-center gap-2 text-sm leading-[22px] text-status-error"
+              >
+                <Info className="h-5 w-5 shrink-0" />
+                <span>{error}</span>
+              </span>
+            )}
+          </span>
+
+          {fieldAction && (
+            <span className="shrink-0 ">
+              {fieldAction}
+            </span>
+          )}
         </span>
       )}
     </label>
@@ -229,11 +237,14 @@ export function SubmitButton({ loading, children, loadingLabel }: { loading: boo
       size="lg"
       type="submit"
       disabled={loading}
-      className={cn(authPrimaryClassName, 'h-12 w-full rounded-xl text-[15px] font-semibold')}
+      className={cn(
+        authPrimaryClassName,
+        'flex flex-row items-center justify-center gap-2 w-full h-11 px-[14px] py-3 rounded-full text-sm font-medium leading-5 tracking-[0.015em] text-center'
+      )}
     >
       {loading ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-[18px] w-[18px] animate-spin shrink-0" />
           <span>{loadingLabel}</span>
         </>
       ) : (
@@ -248,11 +259,9 @@ export function SocialAuth({ apiBaseUrl }: { apiBaseUrl: string }) {
     <>
       <div className="my-7 flex items-center gap-4">
         <span className="h-px flex-1 bg-border" />
-
         <span className="text-xs text-content-muted">
           or continue with
         </span>
-
         <span className="h-px flex-1 bg-border" />
       </div>
 
@@ -262,7 +271,6 @@ export function SocialAuth({ apiBaseUrl }: { apiBaseUrl: string }) {
           label="Continue with Google"
           icon={<GoogleIcon />}
         />
-
         <SocialLink
           href={`${apiBaseUrl}/auth/github`}
           label="Continue with GitHub"
@@ -272,7 +280,6 @@ export function SocialAuth({ apiBaseUrl }: { apiBaseUrl: string }) {
     </>
   );
 }
-
 
 function SocialLink({
   href,
@@ -287,17 +294,17 @@ function SocialLink({
     <a
       href={href}
       className="
-        flex h-12 w-full items-center justify-center gap-3
-        rounded-lg border border-[#E2E8F0] bg-white px-4
-        text-sm font-semibold text-[#1E293B]
-        transition-[border-color,background-color,box-shadow] duration-150 ease-out
+        box-border flex h-[54px] w-full items-center justify-center gap-2
+        rounded-full border-2 border-[#E2E8F0] bg-white px-6 lg:px-3 md:px-3 xl:px-3 py-2
+        text-sm font-medium leading-5 tracking-[0.015em] text-[#1E293B]
+        transition-[border-color,background-color] duration-150 ease-out
         hover:border-[#CBD5E1] hover:bg-[#F8FAFC]
-        focus-visible:outline-none
-        focus-visible:ring-2
-        focus-visible:ring-accent/15
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B8761]/20
       "
     >
-      {icon}
+      <div className="h-6 w-6 shrink-0 flex items-center justify-center">
+        {icon}
+      </div>
       <span>{label}</span>
     </a>
   );

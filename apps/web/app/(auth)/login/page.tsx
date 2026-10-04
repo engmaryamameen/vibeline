@@ -34,52 +34,62 @@ export default function LoginPage() {
     <AuthPage>
       <AuthHeader title="Login" description="Welcome back. Continue your conversations from where you left them." />
 
-      <form className="space-y-5" onSubmit={onSubmit} aria-label="Login form" noValidate>
-        <AuthField
-          label="Email"
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Enter your email address"
-          error={fieldErrors.email}
-          onChange={() => clearFieldError('email')}
-        />
+      <form onSubmit={onSubmit} className='space-y-8' aria-label="Login form" noValidate>
+        <div className='space-y-3'>
+          <AuthField
+            label="Email"
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="Enter your email address"
+            error={fieldErrors.email}
+            onChange={() => clearFieldError('email')}
+          />
 
-        <AuthField
-          label="Password"
-          labelAction={
-            <Link href="/forgot-password" className="text-xs font-medium text-accent transition-colors hover:text-accent-hover">
-              Forgot password?
-            </Link>
-          }
-          id="password"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          autoComplete="current-password"
-          placeholder="Enter your password"
-          error={fieldErrors.password}
-          onChange={() => clearFieldError('password')}
-          trailing={<PasswordToggle visible={showPassword} onClick={togglePasswordVisibility} />}
-        />
-
-        {error && (
-          <AuthNotice>
-            {error}
-            {errorCode === 'EMAIL_NOT_VERIFIED' && (
-              <button
-                type="button"
-                disabled={resending}
-                onClick={resendVerification}
-                className="ml-1 font-semibold underline underline-offset-2"
+          <AuthField
+            label="Password"
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            error={fieldErrors.password}
+            onChange={() => clearFieldError('password')}
+            trailing={
+              <PasswordToggle
+                visible={showPassword}
+                onClick={togglePasswordVisibility}
+              />
+            }
+            fieldAction={
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-[#3C9AFB] hover:text-[#1D64F2]"
               >
-                {resending ? 'Sending…' : 'Resend verification'}
-              </button>
-            )}
-          </AuthNotice>
-        )}
+                Forgot password?
+              </Link>
+            }
+          />
 
-        {resendSuccess && <AuthNotice tone="success">Verification email sent. Check your inbox.</AuthNotice>}
+          {error && (
+            <AuthNotice>
+              {error}
+              {errorCode === 'EMAIL_NOT_VERIFIED' && (
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={resendVerification}
+                  className="ml-1 font-semibold underline underline-offset-2"
+                >
+                  {resending ? 'Sending…' : 'Resend verification'}
+                </button>
+              )}
+            </AuthNotice>
+          )}
+
+          {resendSuccess && <AuthNotice tone="success">Verification email sent. Check your inbox.</AuthNotice>}
+        </div>
 
         <SubmitButton loading={loading} loadingLabel="Signing in…">
           <span>Login</span>

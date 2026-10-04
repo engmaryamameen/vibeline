@@ -78,7 +78,8 @@ const config: Config = {
           primary: 'rgb(var(--text-primary) / <alpha-value>)',
           secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
           muted: 'rgb(var(--text-muted) / <alpha-value>)',
-          accent: 'rgb(var(--text-accent) / <alpha-value>)'
+          accent: 'rgb(var(--text-accent) / <alpha-value>)',
+          link: 'rgb(var(--text-link) / <alpha-value>)'
         },
         border: {
           DEFAULT: 'rgb(var(--border-default) / <alpha-value>)',

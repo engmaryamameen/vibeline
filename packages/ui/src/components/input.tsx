@@ -1,8 +1,7 @@
-import type { InputHTMLAttributes } from 'react';
-
 import { cn } from '@vibeline/utils';
 
-type InputProps = InputHTMLAttributes<HTMLInputElement>;
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> { }
 
 export const Input = ({ className, ...props }: InputProps) => (
   <input
@@ -11,14 +10,11 @@ export const Input = ({ className, ...props }: InputProps) => (
       'text-sm font-normal leading-[22px] tracking-[0.01em] text-[#334155]',
       'placeholder:text-[#94A3B8]',
       'outline-none',
-      'transition-[border-color,box-shadow] duration-150 ease-out',
+      'transition-colors duration-150 ease-out',
       'hover:border-[#CBD5E1]',
-      'focus:border-[#1F8F68]',
-      'focus:ring-2 focus:ring-[#1F8F68]/10',
+      'focus:border-[#CBCBCB] border-[2px]',
       'aria-[invalid=true]:border-[#D12E34]',
       'aria-[invalid=true]:focus:border-[#D12E34]',
-      'aria-[invalid=true]:focus:ring-2',
-      'aria-[invalid=true]:focus:ring-[#D12E34]/10',
       'disabled:cursor-not-allowed disabled:bg-[#F8FAFC] disabled:opacity-60',
       className
     )}
