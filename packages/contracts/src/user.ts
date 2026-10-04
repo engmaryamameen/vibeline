@@ -10,7 +10,7 @@ const profileDateOfBirthSchema = z
   .refine((value) => value <= new Date().toISOString().slice(0, 10), 'Date of birth cannot be in the future');
 
 export const userSearchQuerySchema = z.object({
-  q: z.string().trim().min(2).max(100)
+  q: z.string().trim().max(100).default('')
 });
 
 export const userSearchResultSchema = z.object({

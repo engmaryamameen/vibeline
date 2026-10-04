@@ -1,7 +1,5 @@
 'use client';
 
-import { PageShell } from '@vibeline/ui';
-
 import { AuthGuard } from '@/src/features/auth/components/auth-guard';
 import { ConversationSidebar } from '@/src/features/chat/components/conversation-sidebar';
 import { ConversationThread } from '@/src/features/chat/components/conversation-thread';
@@ -17,12 +15,8 @@ function ChatApp() {
   };
 
   return (
-    <div className="relative h-[100dvh] overflow-hidden bg-white text-content-primary">
-      <PageShell
-        className="h-full min-h-0 overflow-hidden"
-        containerClassName="h-full"
-        gridClassName="h-full gap-0"
-      >
+    <div className="relative h-[100dvh] overflow-hidden bg-surface-bg text-content-primary">
+      <main className="grid h-full min-h-0 grid-cols-4 gap-0 md:grid-cols-8 lg:grid-cols-12">
         <ConversationSidebar
           className="col-span-4 md:col-span-3 lg:col-span-3"
           conversations={chat.conversations}
@@ -34,6 +28,7 @@ function ChatApp() {
           onSelect={chat.setSelectedId}
           onSearch={(query) => report(chat.searchUsers(query))}
           onCreate={(user, type, title) => report(chat.createConversation(user, type, title))}
+          onCreateGroup={(users, title) => report(chat.createGroup(users, title))}
           onLogout={() => report(chat.logout())}
         />
         <ConversationThread
@@ -53,18 +48,16 @@ function ChatApp() {
           onSend={chat.send}
           onEdit={chat.editMessage}
           onDelete={chat.deleteMessage}
+          memberSearch={chat.search}
+          memberResults={chat.searchResults}
+          onSearchMembers={(query) => report(chat.searchUsers(query))}
           onRemoveMember={chat.removeMember}
           onRename={chat.rename}
           onEnableAssistant={chat.enableAssistant}
           onRequestAssistant={chat.requestAssistant}
-          onAddMember={async () => {
-            const query = window.prompt('Search member by email or name');
-            if (!query) return;
-            const added = await chat.findAndAddMember(query);
-            if (!added) chat.setError('No matching user');
-          }}
+          onAddMember={chat.addMember}
         />
-      </PageShell>
+      </main>
 
       {chat.error && (
         <div

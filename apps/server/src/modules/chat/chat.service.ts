@@ -17,7 +17,7 @@ class ChatService {
   }
 
   async listConversations(userId:string){
-    return (await chatRepository.listConversations(userId)).map(({conversation})=>conversation);
+    return chatRepository.listConversations(userId);
   }
 
   async getConversation(userId:string,conversationId:string){
