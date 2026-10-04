@@ -1,10 +1,14 @@
-import { boolean, check, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { boolean, check, date, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   displayName: text('display_name').notNull(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  dateOfBirth: date('date_of_birth'),
+  phoneNumber: text('phone_number'),
   avatarUrl: text('avatar_url'),
   role: text('role').notNull().default('user'),
   emailVerified: boolean('email_verified').notNull().default(false),

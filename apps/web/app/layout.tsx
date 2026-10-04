@@ -8,7 +8,10 @@ type RootLayoutProps = {
 
 const RootLayout = ({ children }: RootLayoutProps) => (
   <html lang="en" suppressHydrationWarning className="min-h-full bg-white">
-    <body className="min-h-full bg-white font-sans text-content-primary antialiased selection:bg-accent/25">{children}</body>
+    <body className="min-h-full bg-white font-sans text-content-primary antialiased selection:bg-accent/25">{children}
+      <div id="overlay-root" />
+
+    </body>
   </html>
 );
 

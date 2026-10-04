@@ -4,14 +4,19 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { apiClient } from '@/src/lib/api-client';
-import type { AuthResponse } from '@/src/features/auth/types';
 import {
   hasFieldErrors,
   validateRegisterFields,
   type FieldErrors
 } from '@/src/features/auth/validation';
 
-type RegisterField = 'displayName' | 'email' | 'password';
+type RegisterField =
+  | 'firstName'
+  | 'lastName'
+  | 'email'
+  | 'dateOfBirth'
+  | 'password'
+  | 'confirmPassword';
 
 export function useRegister() {
   const router = useRouter();
@@ -19,6 +24,7 @@ export function useRegister() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegisterField>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const clearFieldError = (field: RegisterField) => {
@@ -35,10 +41,21 @@ export function useRegister() {
     setError(null);
 
     const data = new FormData(event.currentTarget);
-    const displayName = String(data.get('displayName') ?? '').trim();
+    const firstName = String(data.get('firstName') ?? '').trim();
+    const lastName = String(data.get('lastName') ?? '').trim();
     const email = String(data.get('email') ?? '').trim();
+    const dateOfBirth = String(data.get('dateOfBirth') ?? '').trim();
     const password = String(data.get('password') ?? '');
-    const validationErrors = validateRegisterFields(displayName, email, password);
+    const confirmPassword = String(data.get('confirmPassword') ?? '');
+
+    const validationErrors = validateRegisterFields(
+      firstName,
+      lastName,
+      email,
+      dateOfBirth,
+      password,
+      confirmPassword
+    );
 
     setFieldErrors(validationErrors);
 
@@ -47,9 +64,9 @@ export function useRegister() {
     setLoading(true);
 
     try {
-      await apiClient<AuthResponse>('/auth/register', {
+      await apiClient('/auth/register', {
         method: 'POST',
-        body: { displayName, email, password }
+        body: { firstName, lastName, email, dateOfBirth, password }
       });
       setSuccess(true);
       window.setTimeout(() => router.replace('/verify-email'), 2500);
@@ -66,8 +83,10 @@ export function useRegister() {
     fieldErrors,
     success,
     showPassword,
+    showConfirmPassword,
     onSubmit,
     clearFieldError,
-    togglePasswordVisibility: () => setShowPassword((visible) => !visible)
+    togglePasswordVisibility: () => setShowPassword((visible) => !visible),
+    toggleConfirmPasswordVisibility: () => setShowConfirmPassword((visible) => !visible)
   };
 }

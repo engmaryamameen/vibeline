@@ -13,6 +13,10 @@ type OAuthAuthResult = {
     id: string;
     email: string;
     displayName: string;
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+    phoneNumber?: string | null;
     avatarUrl: string | null;
     role: Role;
     emailVerified: boolean;
@@ -32,6 +36,8 @@ type GoogleUserInfo = {
   email: string;
   email_verified?: boolean;
   name?: string;
+  given_name?: string;
+  family_name?: string;
   picture?: string;
 };
 
@@ -109,6 +115,8 @@ class OAuthService {
       email: googleUser.email.trim().toLowerCase(),
       emailVerified: googleUser.email_verified === true,
       displayName: googleUser.name || this.getDefaultDisplayName(googleUser.email),
+      firstName: googleUser.given_name?.trim() || null,
+      lastName: googleUser.family_name?.trim() || null,
       avatarUrl: googleUser.picture || null
     });
   }
@@ -120,6 +128,10 @@ class OAuthService {
     email: string;
     emailVerified: boolean;
     displayName: string;
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+    phoneNumber?: string | null;
     avatarUrl: string | null;
   }): Promise<OAuthAuthResult> {
     if (!payload.emailVerified) throw new AppError(403, 'OAUTH_EMAIL_UNVERIFIED', 'A verified provider email is required');
@@ -130,7 +142,6 @@ class OAuthService {
       user = await userRepository.findById(identity.userId);
       if (!user) throw new Error('OAuth identity references a missing user');
       await authIdentityRepository.updateIdentityProfile(identity.id, payload.email, payload.emailVerified);
-      // Provider email is metadata. Changing it must not silently change the account's login/contact email.
       if (!user.avatarUrl && payload.avatarUrl) await userRepository.update(user.id, { avatarUrl: payload.avatarUrl });
     } else {
       const result = await authIdentityRepository.createOAuthAccount(payload);
@@ -141,7 +152,18 @@ class OAuthService {
       if (!user) throw new Error('Failed to resolve OAuth user');
     }
 
-    const publicUser = { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, role: user.role as Role, emailVerified: user.emailVerified };
+    const publicUser = {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+      dateOfBirth: user.dateOfBirth ?? undefined,
+      phoneNumber: user.phoneNumber ?? null,
+      avatarUrl: user.avatarUrl,
+      role: user.role as Role,
+      emailVerified: user.emailVerified
+    };
     return { user: publicUser, tokens: { accessToken: signAccessToken({ id: user.id, email: user.email, role: user.role as Role }), refreshToken: await sessionService.create(user.id) } };
   }
 

@@ -19,6 +19,21 @@ export const validatePassword = (password: string) => {
   return undefined;
 };
 
+export const validateDateOfBirth = (dateOfBirth: string) => {
+  if (!dateOfBirth) return 'Date of birth is required.';
+
+  const parsed = new Date(`${dateOfBirth}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== dateOfBirth) {
+    return 'Enter a valid date of birth.';
+  }
+
+  if (dateOfBirth > new Date().toISOString().slice(0, 10)) {
+    return 'Date of birth cannot be in the future.';
+  }
+
+  return undefined;
+};
+
 export const validateLoginFields = (email: string, password: string) => {
   const errors: FieldErrors<'email' | 'password'> = {};
   const emailError = validateEmail(email);
@@ -30,15 +45,32 @@ export const validateLoginFields = (email: string, password: string) => {
   return errors;
 };
 
-export const validateRegisterFields = (displayName: string, email: string, password: string) => {
-  const errors: FieldErrors<'displayName' | 'email' | 'password'> = {};
-  const displayNameError = validateRequired(displayName, 'Name');
+export const validateRegisterFields = (
+  firstName: string,
+  lastName: string,
+  email: string,
+  dateOfBirth: string,
+  password: string,
+  confirmPassword: string
+) => {
+  const errors: FieldErrors<'firstName' | 'lastName' | 'email' | 'dateOfBirth' | 'password' | 'confirmPassword'> = {};
+  const firstNameError = validateRequired(firstName, 'First name');
+  const lastNameError = validateRequired(lastName, 'Last name');
   const emailError = validateEmail(email);
+  const dateOfBirthError = validateDateOfBirth(dateOfBirth);
   const passwordError = validatePassword(password);
 
-  if (displayNameError) errors.displayName = displayNameError;
+  if (firstNameError) errors.firstName = firstNameError;
+  if (lastNameError) errors.lastName = lastNameError;
   if (emailError) errors.email = emailError;
+  if (dateOfBirthError) errors.dateOfBirth = dateOfBirthError;
   if (passwordError) errors.password = passwordError;
+
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Confirm your password.';
+  } else if (!passwordError && password !== confirmPassword) {
+    errors.confirmPassword = 'Passwords do not match.';
+  }
 
   return errors;
 };

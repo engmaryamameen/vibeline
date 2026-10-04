@@ -142,7 +142,7 @@ export const googleCallbackHandler = async (
   try {
     verifyOAuthState(state, 'google');
   } catch (err) {
-    logger.warn({ error: err }, 'Invalid Google OAuth state');
+    logger.warn({ err }, 'Invalid Google OAuth state');
     return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
   }
 
@@ -152,7 +152,7 @@ export const googleCallbackHandler = async (
 
     return reply.redirect(`${env.APP_URL}/auth/callback`);
   } catch (err) {
-    logger.error({ error: error }, 'Google OAuth callback failed');
+    request.log.error({ error }, 'Google OAuth callback failed');
     return reply.redirect(getOAuthCallbackErrorUrl(err instanceof AppError ? err.code.toLowerCase() : 'oauth_failed'));
   }
 };
