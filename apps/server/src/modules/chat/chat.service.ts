@@ -16,7 +16,9 @@ class ChatService {
     if(participants.includes(userId))throw new AppError(400,'INVALID_PARTICIPANTS','Do not include yourself as a participant');
     if(type==='direct'&&participants.length!==1)throw new AppError(400,'INVALID_DIRECT_PARTICIPANTS','A direct conversation requires exactly one other participant');
     if(!(await chatRepository.usersExist(participants)))throw new AppError(400,'INVALID_PARTICIPANTS','One or more participants do not exist');
-    return chatRepository.createConversation(userId,participants,type,title);
+    const conversation=await chatRepository.createConversation(userId,participants,type,title);
+    void realtimePublisher.publish([userId,...participants],{type:'conversation.updated',conversationId:conversation.id,payload:{}}).catch(error=>this.logger?.error({error,operation:'chat.realtime.conversation',conversationId:conversation.id},'conversation realtime publish failed'));
+    return conversation;
   }
 
   async listConversations(userId:string){

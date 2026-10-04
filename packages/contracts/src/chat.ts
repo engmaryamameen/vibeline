@@ -31,7 +31,7 @@ export const messageResponseSchema=z.object({message:messageSchema,duplicate:z.b
 export const receiptUpdateSchema=z.object({userId:z.string().uuid(),deliveredSequence:z.number().int().nonnegative(),readSequence:z.number().int().nonnegative()});
 export const presenceUpdateSchema=z.object({userId:z.string().uuid(),lastSeenAt:z.string()});
 export const updateReceiptRequestSchema=z.object({deliveredSequence:z.number().int().nonnegative(),readSequence:z.number().int().nonnegative()});
-export const messageChatEventSchema=z.union([z.object({type:z.enum(['message.created','message.updated','message.deleted']),conversationId:z.string().uuid(),payload:messageSchema}),z.object({type:z.literal('receipt.updated'),conversationId:z.string().uuid(),payload:receiptUpdateSchema}),z.object({type:z.literal('presence.updated'),conversationId:z.string().uuid(),payload:presenceUpdateSchema})]);
+export const messageChatEventSchema=z.union([z.object({type:z.enum(['message.created','message.updated','message.deleted']),conversationId:z.string().uuid(),payload:messageSchema}),z.object({type:z.literal('receipt.updated'),conversationId:z.string().uuid(),payload:receiptUpdateSchema}),z.object({type:z.literal('presence.updated'),conversationId:z.string().uuid(),payload:presenceUpdateSchema}),z.object({type:z.literal('conversation.updated'),conversationId:z.string().uuid(),payload:z.object({})})]);
 
 export const enableAssistantRequestSchema=z.object({displayName:z.string().trim().min(1).max(80).default('Assistant')});
 export const requestAssistantResponseSchema=z.object({clientRequestId:z.string().uuid()});
