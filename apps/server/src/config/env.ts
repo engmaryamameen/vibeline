@@ -33,7 +33,10 @@ const envSchema = z.object({
   GOOGLE_CALLBACK_URL: optionalUrl,
   OPENAI_API_KEY: optionalNonEmpty,
   OPENAI_MODEL: optionalNonEmpty,
-  OPENAI_RESPONSES_URL: optionalUrl
+  OPENAI_RESPONSES_URL: optionalUrl,
+  WEB_PUSH_PUBLIC_KEY: optionalNonEmpty,
+  WEB_PUSH_PRIVATE_KEY: optionalNonEmpty,
+  WEB_PUSH_SUBJECT: optionalNonEmpty
 }).superRefine((value, ctx) => {
   const validateProvider = (name: 'GOOGLE') => {
     const fields = [`${name}_CLIENT_ID`, `${name}_CLIENT_SECRET`, `${name}_CALLBACK_URL`] as const;
@@ -46,6 +49,10 @@ const envSchema = z.object({
   const modelFields = ['OPENAI_API_KEY','OPENAI_MODEL','OPENAI_RESPONSES_URL'] as const;
   const modelConfigured = modelFields.filter(field => Boolean(value[field]));
   if (modelConfigured.length > 0 && modelConfigured.length < modelFields.length) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [modelConfigured[0] ?? 'OPENAI_API_KEY'], message: 'OpenAI provider must provide API key, model name, and Responses URL together' });
+
+  const pushFields = ['WEB_PUSH_PUBLIC_KEY','WEB_PUSH_PRIVATE_KEY','WEB_PUSH_SUBJECT'] as const;
+  const pushConfigured = pushFields.filter(field => Boolean(value[field]));
+  if (pushConfigured.length > 0 && pushConfigured.length < pushFields.length) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [pushConfigured[0] ?? 'WEB_PUSH_PUBLIC_KEY'], message: 'Web Push must provide public key, private key, and subject together' });
 
   if (value.NODE_ENV === 'production') {
     const appUrl = new URL(value.APP_URL);
