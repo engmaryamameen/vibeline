@@ -174,6 +174,23 @@ export const assistantGenerationAttempts = pgTable('assistant_generation_attempt
   check('assistant_generation_attempts_number_ck', sql`${table.attemptNumber} >= 1`)
 ]);
 
+
+export const connectionRequestStatus = pgEnum('connection_request_status', ['pending', 'accepted', 'rejected']);
+
+export const connectionRequests = pgTable('connection_requests', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  addresseeId: text('addressee_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: connectionRequestStatus('status').notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  respondedAt: timestamp('responded_at', { withTimezone: true })
+}, (table) => [
+  uniqueIndex('connection_requests_pair_uq').on(sql`LEAST(${table.requesterId}, ${table.addresseeId})`, sql`GREATEST(${table.requesterId}, ${table.addresseeId})`),
+  index('connection_requests_addressee_status_idx').on(table.addresseeId, table.status, table.createdAt),
+  index('connection_requests_requester_status_idx').on(table.requesterId, table.status, table.createdAt),
+  check('connection_requests_not_self_ck', sql`${table.requesterId} <> ${table.addresseeId}`)
+]);
+
 export const userPresence = pgTable('user_presence', {
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow()

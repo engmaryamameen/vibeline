@@ -42,6 +42,23 @@ class UserService {
   async searchUsers(userId: string, query: string) {
     return userRepository.search(query.trim(), userId);
   }
+
+  async listConnectionRequests(userId: string) {
+    const rows = await userRepository.listIncomingConnectionRequests(userId);
+    return rows.map((row) => ({ ...row, user: { ...row.user, connectionStatus: 'incoming' as const } }));
+  }
+
+  async requestConnection(userId: string, targetUserId: string) {
+    if (userId === targetUserId) throw new AppError(400, 'INVALID_CONNECTION_REQUEST', 'You cannot add yourself');
+    if (!(await userRepository.findById(targetUserId))) throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
+    await userRepository.requestConnection(userId, targetUserId);
+  }
+
+  async respondConnection(userId: string, requestId: string, accept: boolean) {
+    const request = await userRepository.respondConnection(userId, requestId, accept);
+    if (!request) throw new AppError(404, 'CONNECTION_REQUEST_NOT_FOUND', 'Connection request not found');
+  }
+
 }
 
 export const userService = new UserService();

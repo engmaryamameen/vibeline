@@ -1,4 +1,4 @@
-import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
+import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,connectionRequestsResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
 import type { ConversationSummary,Message,UserSearchResult } from '@vibeline/contracts';
 export type AuthorizedRequest=<T>(path:string,options?:{method?:'GET'|'POST'|'PATCH'|'DELETE';body?:unknown;responseSchema?:{parse:(value:unknown)=>T}})=>Promise<T>;
 export const chatApi=(request:AuthorizedRequest)=>({
@@ -17,6 +17,10 @@ export const chatApi=(request:AuthorizedRequest)=>({
  updateReceipt:(id:string,deliveredSequence:number,readSequence:number)=>request(`/chat/conversations/${id}/receipt`,{method:'POST',body:{deliveredSequence,readSequence}}),
  touchPresence:()=>request(`/chat/presence`,{method:'POST'}),
  removeMember:(id:string,userId:string)=>request<void>(`/chat/conversations/${id}/members/${userId}`,{method:'DELETE'}),
- searchUsers:(q:string)=>request(`/users/search?q=${encodeURIComponent(q)}`,{responseSchema:userSearchResponseSchema})
+ searchUsers:(q:string)=>request(`/users/search?q=${encodeURIComponent(q)}`,{responseSchema:userSearchResponseSchema}),
+ listConnectionRequests:()=>request('/users/connections/requests',{responseSchema:connectionRequestsResponseSchema}),
+ requestConnection:(userId:string)=>request(`/users/connections/${userId}`,{method:'POST'}),
+ acceptConnection:(requestId:string)=>request(`/users/connections/requests/${requestId}/accept`,{method:'POST'}),
+ rejectConnection:(requestId:string)=>request(`/users/connections/requests/${requestId}/reject`,{method:'POST'})
 });
 export type {ConversationSummary,Message,UserSearchResult};

@@ -85,6 +85,13 @@
       "when": 1791151800000,
       "tag": "0011_message_user_deletions",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791181800000,
+      "tag": "0012_user_connections",
+      "breakpoints": true
     }
   ]
 }
