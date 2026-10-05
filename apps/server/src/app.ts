@@ -9,12 +9,14 @@ import { env } from '@/config/env';
 import { realtimePublisher } from '@/modules/chat/realtime.publisher';
 import { chatService } from '@/modules/chat/chat.service';
 import { assistantService } from '@/modules/assistant/assistant.service';
+import { notificationService } from '@/modules/notification/notification.service';
 
 export const buildApp = () => {
   const app = Fastify({ logger: loggerConfig, bodyLimit: 64 * 1024, requestIdHeader: 'x-request-id', trustProxy: env.TRUST_PROXY });
   app.register(corsPlugin);
   chatService.setLogger(app.log);
   assistantService.setLogger(app.log);
+  notificationService.setLogger(app.log);
   app.addHook('onReady',async()=>{realtimePublisher.start((conversationId,messageId)=>chatService.getMessageForRealtime(conversationId,messageId),app.log);});
   app.addHook('onClose',async()=>{await realtimePublisher.stop();});
   app.addHook('onRequest', async request => { request.requestStartTime = process.hrtime.bigint(); });

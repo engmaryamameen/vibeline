@@ -206,3 +206,26 @@ export const conversationMemberReceipts = pgTable('conversation_member_receipts'
   uniqueIndex('conversation_member_receipts_pk').on(table.conversationId, table.userId),
   check('conversation_member_receipts_sequences_ck', sql`${table.readSequence} <= ${table.deliveredSequence} AND ${table.readSequence} >= 0`)
 ]);
+
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('push_subscriptions_endpoint_uq').on(table.endpoint),
+  index('push_subscriptions_user_idx').on(table.userId)
+]);
+
+export const notificationPreferences = pgTable('notification_preferences', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  enabled: boolean('enabled').notNull().default(true),
+  messagesEnabled: boolean('messages_enabled').notNull().default(true),
+  connectionsEnabled: boolean('connections_enabled').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
