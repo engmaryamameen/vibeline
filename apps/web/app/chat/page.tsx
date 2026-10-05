@@ -4,6 +4,7 @@ import { AuthGuard } from '@/src/features/auth/components/auth-guard';
 import { ConversationSidebar } from '@/src/features/chat/components/conversation-sidebar';
 import { ConversationThread } from '@/src/features/chat/components/conversation-thread';
 import { useChatWorkspace } from '@/src/features/chat/hooks/use-chat-workspace';
+import { NotificationControl } from '@/src/features/notifications/notification-control';
 
 function ChatApp() {
   const chat = useChatWorkspace();
@@ -34,7 +35,6 @@ function ChatApp() {
           onRequestConnection={chat.requestConnection}
           onRespondConnection={chat.respondConnection}
           onRefreshRequests={chat.loadConnectionRequests}
-          onLogout={() => report(chat.logout())}
         />
         <ConversationThread
           className="col-span-4 md:col-span-5 lg:col-span-9"
@@ -63,6 +63,8 @@ function ChatApp() {
           onAddMember={chat.addMember}
         />
       </main>
+
+      <NotificationControl />
 
       {chat.error && (
         <div

@@ -3,6 +3,8 @@ import { AppError } from '@/common/errors/app-error';
 import { chatRepository } from './chat.repository';
 import { realtimePublisher } from './realtime.publisher';
 import type { FastifyBaseLogger } from 'fastify';
+import { userRepository } from '@/repositories/user.repository';
+import { notificationService } from '@/modules/notification/notification.service';
 
 type PersistedMessage = Omit<Message,'senderId'|'assistantId'|'createdAt'|'editedAt'|'deletedAt'> & { senderId:string|null; assistantId:string|null; createdAt:Date|string; editedAt:Date|string|null; deletedAt:Date|string|null };
 const toMessage=(message:PersistedMessage):Message=>({id:message.id,conversationId:message.conversationId,...(message.senderId?{senderId:message.senderId}:{}),...(message.assistantId?{assistantId:message.assistantId}:{}),clientMessageId:message.clientMessageId,sequence:message.sequence,body:message.body,createdAt:message.createdAt instanceof Date?message.createdAt.toISOString():message.createdAt,...(message.editedAt?{editedAt:message.editedAt instanceof Date?message.editedAt.toISOString():message.editedAt}:{}),...(message.deletedAt?{deletedAt:message.deletedAt instanceof Date?message.deletedAt.toISOString():message.deletedAt}:{})});
@@ -74,7 +76,7 @@ class ChatService {
   async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string){
     const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body);
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    if(result.created)void this.publish(conversationId,'message.created',toMessage(result.message));
+    if(result.created){void this.publish(conversationId,'message.created',toMessage(result.message));void this.notifyMessage(userId,conversationId,result.message.sequence,body);}
     return result;
   }
 
@@ -102,6 +104,8 @@ class ChatService {
   async touchPresence(userId:string){const presence=await chatRepository.touchPresence(userId);const peers=(await chatRepository.listConversationPeerIds(userId)).map(x=>x.userId);for(const conversation of await chatRepository.listConversations(userId))void realtimePublisher.publish(peers,{type:'presence.updated',conversationId:conversation.id,payload:{userId,lastSeenAt:presence!.lastSeenAt.toISOString()}}).catch(()=>undefined);return presence;}
 
   async publishPersistedMessage(conversationId:string,message:PersistedMessage){await this.publish(conversationId,'message.created',toMessage(message));}
+
+  private async notifyMessage(senderId:string,conversationId:string,sequence:number,body:string){try{const [sender,recipients]=await Promise.all([userRepository.findById(senderId),chatRepository.listMessageRecipientIds(conversationId,sequence)]);const preview=body.length>120?`${body.slice(0,117)}…`:body;for(const recipient of recipients)if(recipient.userId!==senderId)void notificationService.notify(recipient.userId,'message',{title:sender?.displayName??'New message',body:preview,url:`/chat?conversation=${conversationId}`,tag:`conversation:${conversationId}`});}catch(error){this.logger?.error({error,operation:'push.message',conversationId},'message notification scheduling failed');}}
 
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');

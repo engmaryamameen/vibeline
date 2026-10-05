@@ -98,9 +98,9 @@ class UserRepository {
 
   async requestConnection(userId: string, targetUserId: string) {
     const existing = await db.query.connectionRequests.findFirst({ where: or(and(eq(connectionRequests.requesterId,userId),eq(connectionRequests.addresseeId,targetUserId)),and(eq(connectionRequests.requesterId,targetUserId),eq(connectionRequests.addresseeId,userId))) });
-    if (existing?.status === 'accepted' || existing?.status === 'pending') return existing;
-    if (existing) { const [row]=await db.update(connectionRequests).set({requesterId:userId,addresseeId:targetUserId,status:'pending',createdAt:new Date(),respondedAt:null}).where(eq(connectionRequests.id,existing.id)).returning(); return row!; }
-    const [row]=await db.insert(connectionRequests).values({id:randomUUID(),requesterId:userId,addresseeId:targetUserId}).returning(); return row!;
+    if (existing?.status === 'accepted' || existing?.status === 'pending') return { request: existing, shouldNotify: false };
+    if (existing) { const [row]=await db.update(connectionRequests).set({requesterId:userId,addresseeId:targetUserId,status:'pending',createdAt:new Date(),respondedAt:null}).where(eq(connectionRequests.id,existing.id)).returning(); return { request: row!, shouldNotify: true }; }
+    const [row]=await db.insert(connectionRequests).values({id:randomUUID(),requesterId:userId,addresseeId:targetUserId}).returning(); return { request: row!, shouldNotify: true };
   }
 
   async respondConnection(userId: string, requestId: string, accept: boolean) {
