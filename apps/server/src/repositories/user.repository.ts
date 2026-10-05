@@ -70,7 +70,15 @@ class UserRepository {
           WHERE (cr.requester_id = ${excludeUserId} AND cr.addressee_id = ${users.id})
              OR (cr.addressee_id = ${excludeUserId} AND cr.requester_id = ${users.id})
           LIMIT 1
-        ), 'none')`
+        ), 'none')`,
+        connectionRequestId: sql<string | null>`(
+          SELECT cr.id
+          FROM connection_requests cr
+          WHERE cr.status = 'pending'
+            AND ((cr.requester_id = ${excludeUserId} AND cr.addressee_id = ${users.id})
+              OR (cr.addressee_id = ${excludeUserId} AND cr.requester_id = ${users.id}))
+          LIMIT 1
+        )`
       })
       .from(users)
       .leftJoin(userPresence, eq(userPresence.userId, users.id))
