@@ -19,7 +19,8 @@ export const userSearchResultSchema = z.object({
   displayName: z.string(),
   avatarUrl: z.string().nullish().transform((value) => value ?? undefined),
   lastSeenAt: z.coerce.date().transform((value) => value.toISOString()).or(z.string()).nullish().transform((value) => value ?? undefined),
-  connectionStatus: z.enum(['none', 'incoming', 'outgoing', 'connected']).default('none')
+  connectionStatus: z.enum(['none', 'incoming', 'outgoing', 'connected']).default('none'),
+  connectionRequestId: z.string().uuid().nullish().transform((value) => value ?? undefined)
 });
 export type UserSearchResult = z.infer<typeof userSearchResultSchema>;
 export const userSearchResponseSchema = z.object({ users: z.array(userSearchResultSchema) });
