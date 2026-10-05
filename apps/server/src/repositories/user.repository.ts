@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import type { User } from '@vibeline/contracts';
-import { and, asc, eq, ilike, ne, or } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { users } from '@/db/schema';
+import { connectionRequests, userPresence, users } from '@/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
 export type StoredUser = InferSelectModel<typeof users>;
@@ -52,17 +53,51 @@ class UserRepository {
     const trimmed = query.trim();
     const pattern = `%${trimmed}%`;
     return db
-      .select({ id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl })
+      .select({
+        id: users.id,
+        email: users.email,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl,
+        lastSeenAt: userPresence.lastSeenAt,
+        connectionStatus: sql<'none' | 'incoming' | 'outgoing' | 'connected'>`COALESCE((
+          SELECT CASE
+            WHEN cr.status = 'accepted' THEN 'connected'
+            WHEN cr.status = 'pending' AND cr.addressee_id = ${excludeUserId} THEN 'incoming'
+            WHEN cr.status = 'pending' THEN 'outgoing'
+            ELSE 'none'
+          END
+          FROM connection_requests cr
+          WHERE (cr.requester_id = ${excludeUserId} AND cr.addressee_id = ${users.id})
+             OR (cr.addressee_id = ${excludeUserId} AND cr.requester_id = ${users.id})
+          LIMIT 1
+        ), 'none')`
+      })
       .from(users)
-      .where(
-        and(
-          ne(users.id, excludeUserId),
-          eq(users.emailVerified, true),
-          ...(trimmed ? [or(ilike(users.email, pattern), ilike(users.displayName, pattern))!] : [])
-        )
-      )
-      .orderBy(asc(users.displayName))
+      .leftJoin(userPresence, eq(userPresence.userId, users.id))
+      .where(and(ne(users.id, excludeUserId), eq(users.emailVerified, true), ...(trimmed ? [or(ilike(users.email, pattern), ilike(users.displayName, pattern))!] : [])))
+      .orderBy(sql`${userPresence.lastSeenAt} DESC NULLS LAST`, asc(users.displayName))
       .limit(30);
+  }
+
+  async listIncomingConnectionRequests(userId: string) {
+    return db.select({ id: connectionRequests.id, createdAt: connectionRequests.createdAt, user: { id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl, lastSeenAt: userPresence.lastSeenAt } })
+      .from(connectionRequests)
+      .innerJoin(users, eq(users.id, connectionRequests.requesterId))
+      .leftJoin(userPresence, eq(userPresence.userId, users.id))
+      .where(and(eq(connectionRequests.addresseeId, userId), eq(connectionRequests.status, 'pending')))
+      .orderBy(desc(connectionRequests.createdAt));
+  }
+
+  async requestConnection(userId: string, targetUserId: string) {
+    const existing = await db.query.connectionRequests.findFirst({ where: or(and(eq(connectionRequests.requesterId,userId),eq(connectionRequests.addresseeId,targetUserId)),and(eq(connectionRequests.requesterId,targetUserId),eq(connectionRequests.addresseeId,userId))) });
+    if (existing?.status === 'accepted' || existing?.status === 'pending') return existing;
+    if (existing) { const [row]=await db.update(connectionRequests).set({requesterId:userId,addresseeId:targetUserId,status:'pending',createdAt:new Date(),respondedAt:null}).where(eq(connectionRequests.id,existing.id)).returning(); return row!; }
+    const [row]=await db.insert(connectionRequests).values({id:randomUUID(),requesterId:userId,addresseeId:targetUserId}).returning(); return row!;
+  }
+
+  async respondConnection(userId: string, requestId: string, accept: boolean) {
+    const [row]=await db.update(connectionRequests).set({status:accept?'accepted':'rejected',respondedAt:new Date()}).where(and(eq(connectionRequests.id,requestId),eq(connectionRequests.addresseeId,userId),eq(connectionRequests.status,'pending'))).returning();
+    return row ?? null;
   }
 
   async setEmailVerified(id: string) {

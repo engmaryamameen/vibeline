@@ -17,9 +17,13 @@ export const userSearchResultSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   displayName: z.string(),
-  avatarUrl: z.string().nullish().transform((value) => value ?? undefined)
+  avatarUrl: z.string().nullish().transform((value) => value ?? undefined),
+  lastSeenAt: z.coerce.date().transform((value) => value.toISOString()).or(z.string()).nullish().transform((value) => value ?? undefined),
+  connectionStatus: z.enum(['none', 'incoming', 'outgoing', 'connected']).default('none')
 });
 export type UserSearchResult = z.infer<typeof userSearchResultSchema>;
+export const userSearchResponseSchema = z.object({ users: z.array(userSearchResultSchema) });
+export type UserSearchResponse = z.infer<typeof userSearchResponseSchema>;
 
 export const updateProfileRequestSchema = z
   .object({
@@ -37,3 +41,14 @@ export const updateProfileRequestSchema = z
     message: 'At least one profile field is required'
   });
 export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
+
+export const connectionRequestSchema = z.object({
+  id: z.string().uuid(),
+  user: userSearchResultSchema,
+  createdAt: z.coerce.date().transform((value) => value.toISOString()).or(z.string())
+});
+export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
+export const connectionRequestsResponseSchema = z.object({ requests: z.array(connectionRequestSchema) });
+export const connectionRequestResponseSchema = z.object({ request: connectionRequestSchema.optional() });
+export const connectionUserParamsSchema = z.object({ userId: z.string().uuid() });
+export const connectionRequestParamsSchema = z.object({ requestId: z.string().uuid() });

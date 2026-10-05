@@ -121,6 +121,15 @@ export const messages = pgTable('messages', {
   check('messages_single_author_ck', sql`((${table.senderId} IS NOT NULL)::int + (${table.assistantId} IS NOT NULL)::int) = 1`)
 ]);
 
+export const messageUserDeletions = pgTable('message_user_deletions', {
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('message_user_deletions_message_user_uq').on(table.messageId, table.userId),
+  index('message_user_deletions_user_message_idx').on(table.userId, table.messageId)
+]);
+
 export const assistantGenerations = pgTable('assistant_generations', {
   id: text('id').primaryKey(),
   conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
@@ -163,6 +172,23 @@ export const assistantGenerationAttempts = pgTable('assistant_generation_attempt
   uniqueIndex('assistant_generation_attempts_owner_uq').on(table.generationId, table.ownerToken),
   index('assistant_generation_attempts_generation_idx').on(table.generationId, table.claimedAt),
   check('assistant_generation_attempts_number_ck', sql`${table.attemptNumber} >= 1`)
+]);
+
+
+export const connectionRequestStatus = pgEnum('connection_request_status', ['pending', 'accepted', 'rejected']);
+
+export const connectionRequests = pgTable('connection_requests', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  addresseeId: text('addressee_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: connectionRequestStatus('status').notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  respondedAt: timestamp('responded_at', { withTimezone: true })
+}, (table) => [
+  uniqueIndex('connection_requests_pair_uq').on(sql`LEAST(${table.requesterId}, ${table.addresseeId})`, sql`GREATEST(${table.requesterId}, ${table.addresseeId})`),
+  index('connection_requests_addressee_status_idx').on(table.addresseeId, table.status, table.createdAt),
+  index('connection_requests_requester_status_idx').on(table.requesterId, table.status, table.createdAt),
+  check('connection_requests_not_self_ck', sql`${table.requesterId} <> ${table.addresseeId}`)
 ]);
 
 export const userPresence = pgTable('user_presence', {
