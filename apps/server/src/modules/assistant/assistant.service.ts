@@ -67,7 +67,7 @@ class AssistantService{
 
     let finalized;
     try{finalized=await assistantRepository.completeGeneration(conversationId,result.generation.id,result.ownerToken,generated.text,{...generated,latencyMs:Date.now()-started});}
-    catch(error){
+    catch{
       await assistantRepository.failOwned(result.generation.id,result.ownerToken,'FINALIZATION_FAILURE',Date.now()-started,{provider:generated.provider,model:generated.model});
       this.logger?.error({errorCode:'FINALIZATION_FAILURE',operation:'assistant.finalize',conversationId,generationId:result.generation.id},'assistant finalization failed');
       throw new AppError(502,'ASSISTANT_GENERATION_FAILED','Assistant response could not be saved');

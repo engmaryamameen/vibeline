@@ -20,15 +20,20 @@ function ChatApp() {
         <ConversationSidebar
           className="col-span-4 md:col-span-3 lg:col-span-3"
           conversations={chat.conversations}
+          connectionRequests={chat.connectionRequests}
           selectedId={chat.selectedId}
           loading={chat.loading}
           displayName={chat.currentUser?.displayName}
+          currentUserId={chat.currentUser?.id}
           search={chat.search}
           results={chat.searchResults}
           onSelect={chat.setSelectedId}
           onSearch={(query) => report(chat.searchUsers(query))}
           onCreate={(user, type, title) => report(chat.createConversation(user, type, title))}
           onCreateGroup={(users, title) => report(chat.createGroup(users, title))}
+          onRequestConnection={chat.requestConnection}
+          onRespondConnection={chat.respondConnection}
+          onRefreshRequests={chat.loadConnectionRequests}
           onLogout={() => report(chat.logout())}
         />
         <ConversationThread

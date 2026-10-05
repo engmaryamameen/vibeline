@@ -4,16 +4,21 @@ import { chatRepository } from './chat.repository';
 import { realtimePublisher } from './realtime.publisher';
 import type { FastifyBaseLogger } from 'fastify';
 
+type PersistedMessage = Omit<Message,'senderId'|'assistantId'|'createdAt'|'editedAt'|'deletedAt'> & { senderId:string|null; assistantId:string|null; createdAt:Date|string; editedAt:Date|string|null; deletedAt:Date|string|null };
+const toMessage=(message:PersistedMessage):Message=>({id:message.id,conversationId:message.conversationId,...(message.senderId?{senderId:message.senderId}:{}),...(message.assistantId?{assistantId:message.assistantId}:{}),clientMessageId:message.clientMessageId,sequence:message.sequence,body:message.body,createdAt:message.createdAt instanceof Date?message.createdAt.toISOString():message.createdAt,...(message.editedAt?{editedAt:message.editedAt instanceof Date?message.editedAt.toISOString():message.editedAt}:{}),...(message.deletedAt?{deletedAt:message.deletedAt instanceof Date?message.deletedAt.toISOString():message.deletedAt}:{})});
+
 class ChatService {
   private logger:FastifyBaseLogger|undefined;
   setLogger(logger:FastifyBaseLogger){this.logger=logger;}
-  getMessageForRealtime(conversationId:string,messageId:string){return chatRepository.getMessage(conversationId,messageId);}
+  async getMessageForRealtime(conversationId:string,messageId:string){const message=await chatRepository.getMessage(conversationId,messageId);return message?toMessage(message):undefined;}
   async createConversation(userId:string,participantUserIds:string[],type:'direct'|'group',title?:string){
     const participants=[...new Set(participantUserIds)];
     if(participants.includes(userId))throw new AppError(400,'INVALID_PARTICIPANTS','Do not include yourself as a participant');
     if(type==='direct'&&participants.length!==1)throw new AppError(400,'INVALID_DIRECT_PARTICIPANTS','A direct conversation requires exactly one other participant');
     if(!(await chatRepository.usersExist(participants)))throw new AppError(400,'INVALID_PARTICIPANTS','One or more participants do not exist');
-    return chatRepository.createConversation(userId,participants,type,title);
+    const conversation=await chatRepository.createConversation(userId,participants,type,title);
+    void realtimePublisher.publish([userId,...participants],{type:'conversation.updated',conversationId:conversation.id,payload:{}}).catch(error=>this.logger?.error({error,operation:'chat.realtime.conversation',conversationId:conversation.id},'conversation realtime publish failed'));
+    return conversation;
   }
 
   async listConversations(userId:string){
@@ -69,7 +74,7 @@ class ChatService {
   async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string){
     const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body);
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    if(result.created)void this.publish(conversationId,'message.created',result.message);
+    if(result.created)void this.publish(conversationId,'message.created',toMessage(result.message));
     return result;
   }
 
@@ -79,24 +84,24 @@ class ChatService {
     if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');
     if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can edit this message');
     if(result.kind==='deleted')throw new AppError(409,'MESSAGE_DELETED','Deleted messages cannot be edited');
-    void this.publish(conversationId,'message.updated',result.message);
+    void this.publish(conversationId,'message.updated',toMessage(result.message));
     return result.message;
   }
 
-  async deleteMessage(userId:string,conversationId:string,messageId:string){
-    const result=await chatRepository.deleteMessage(conversationId,userId,messageId);
+  async deleteMessage(userId:string,conversationId:string,messageId:string,scope:'me'|'everyone'){
+    const result=scope==='me'?await chatRepository.deleteMessageForUser(conversationId,userId,messageId):await chatRepository.deleteMessageForEveryone(conversationId,userId,messageId);
     if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');
-    if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can delete this message');
-    void this.publish(conversationId,'message.deleted',result.message);
+    if(result.kind==='forbidden')throw new AppError(403,'FORBIDDEN','Only the sender can delete this message for everyone');
+    if(scope==='everyone')void this.publish(conversationId,'message.deleted',toMessage(result.message));
     return result.message;
   }
 
   async updateReceipt(userId:string,conversationId:string,deliveredSequence:number,readSequence:number){const receipt=await chatRepository.updateReceipt(conversationId,userId,deliveredSequence,readSequence);if(!receipt)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');const ids=(await chatRepository.listMessageRecipientIds(conversationId,Number.MAX_SAFE_INTEGER)).map(x=>x.userId);void realtimePublisher.publish(ids,{type:'receipt.updated',conversationId,payload:{userId,deliveredSequence:receipt.deliveredSequence,readSequence:receipt.readSequence}}).catch(()=>undefined);return receipt;}
 
-  async touchPresence(userId:string){const presence=await chatRepository.touchPresence(userId);const peers=(await chatRepository.listConversationPeerIds(userId)).map(x=>x.userId);for(const conversation of await chatRepository.listConversations(userId))void realtimePublisher.publish(peers,{type:'presence.updated',conversationId:conversation.id,payload:{userId,lastSeenAt:presence.lastSeenAt.toISOString()}}).catch(()=>undefined);return presence;}
+  async touchPresence(userId:string){const presence=await chatRepository.touchPresence(userId);const peers=(await chatRepository.listConversationPeerIds(userId)).map(x=>x.userId);for(const conversation of await chatRepository.listConversations(userId))void realtimePublisher.publish(peers,{type:'presence.updated',conversationId:conversation.id,payload:{userId,lastSeenAt:presence!.lastSeenAt.toISOString()}}).catch(()=>undefined);return presence;}
 
-  async publishPersistedMessage(conversationId:string,message:Message){await this.publish(conversationId,'message.created',message);}
+  async publishPersistedMessage(conversationId:string,message:PersistedMessage){await this.publish(conversationId,'message.created',toMessage(message));}
 
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');

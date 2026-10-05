@@ -1,6 +1,7 @@
 'use client';
 
 import type { ComponentType, FormHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   AlertCircle,
@@ -77,9 +78,11 @@ export function Brand({ light = false }: { light?: boolean }) {
       className="relative z-10 inline-flex w-fit items-center gap-1 select-none transition-opacity hover:opacity-90"
       aria-label="VibeLine home"
     >
-      <img
+      <Image
         src="/images/vibeline-bird-logo-green.svg"
         alt=""
+        width={52}
+        height={44}
         className="h-11 w-auto shrink-0"
         aria-hidden="true"
       />

@@ -12,7 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
-    "test:integration": "RUN_DB_TESTS=1 tsx --test test/*.integration.test.ts"
+    "test:integration": "RUN_DB_TESTS=1 tsx --env-file=../../.env --test test/*.integration.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
