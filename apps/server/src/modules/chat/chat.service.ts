@@ -105,7 +105,7 @@ class ChatService {
 
   async publishPersistedMessage(conversationId:string,message:PersistedMessage){await this.publish(conversationId,'message.created',toMessage(message));}
 
-  private async notifyMessage(senderId:string,conversationId:string,sequence:number,body:string){try{const [sender,recipients]=await Promise.all([userRepository.findById(senderId),chatRepository.listMessageRecipientIds(conversationId,sequence)]);const preview=body.length>120?`${body.slice(0,117)}…`:body;for(const recipient of recipients)if(recipient.userId!==senderId)void notificationService.notify(recipient.userId,'message',{title:sender?.displayName??'New message',body:preview,url:`/chat?conversation=${conversationId}`,tag:`conversation:${conversationId}`});}catch(error){this.logger?.error({error,operation:'push.message',conversationId},'message notification scheduling failed');}}
+  private async notifyMessage(senderId:string,conversationId:string,sequence:number,body:string){try{const [sender,recipients]=await Promise.all([userRepository.findById(senderId),chatRepository.listMessageRecipientIds(conversationId,sequence)]);const preview=body.length>120?`${body.slice(0,117)}…`:body;for(const recipient of recipients)if(recipient.userId!==senderId)void notificationService.notify(recipient.userId,'message',{title:sender?.displayName??'New message',body:preview,url:`/chat?conversation=${conversationId}`,tag:`conversation:${conversationId}`,conversationId});}catch(error){this.logger?.error({error,operation:'push.message',conversationId},'message notification scheduling failed');}}
 
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
