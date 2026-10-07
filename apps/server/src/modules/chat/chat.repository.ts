@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { conversationMemberReceipts, conversationMembers, conversations, messages, messageUserDeletions, userPresence, users } from '@/db/schema';
+import { conversationMemberReceipts, conversationMembers, conversations, messages, messageReactions, messageUserDeletions, userPresence, users } from '@/db/schema';
 
 const activeMembership = (conversationId:string,userId:string) => and(eq(conversationMembers.conversationId,conversationId),eq(conversationMembers.userId,userId),isNull(conversationMembers.leftAt));
 
@@ -22,6 +22,11 @@ class ChatRepository {
   getConversation(id:string){return db.query.conversations.findFirst({where:eq(conversations.id,id)});}
   getMessage(id:string,messageId:string){return db.query.messages.findFirst({where:and(eq(messages.id,messageId),eq(messages.conversationId,id))});}
   getMembership(id:string,userId:string){return db.query.conversationMembers.findFirst({where:activeMembership(id,userId)});}
+  async getQuickEmoji(id:string,userId:string){const row=await this.getMembership(id,userId);return row?.quickEmoji;}
+  async setQuickEmoji(id:string,userId:string,emoji:string){const [row]=await db.update(conversationMembers).set({quickEmoji:emoji}).where(activeMembership(id,userId)).returning({quickEmoji:conversationMembers.quickEmoji});return row;}
+  async listReactions(id:string,userId:string){if(!(await this.getMembership(id,userId)))return null;return db.select({messageId:messageReactions.messageId,userId:messageReactions.userId,emoji:messageReactions.emoji,createdAt:messageReactions.createdAt}).from(messageReactions).innerJoin(messages,eq(messages.id,messageReactions.messageId)).where(and(eq(messages.conversationId,id),isNull(messages.deletedAt))).orderBy(asc(messageReactions.createdAt));}
+  async addReaction(id:string,userId:string,messageId:string,emoji:string){if(!(await this.getMembership(id,userId)))return {kind:'not-found' as const};const message=await this.getMessage(id,messageId);if(!message||message.deletedAt)return {kind:'message-not-found' as const};const [row]=await db.insert(messageReactions).values({id:randomUUID(),messageId,userId,emoji}).onConflictDoNothing({target:[messageReactions.messageId,messageReactions.userId,messageReactions.emoji]}).returning();return {kind:'ok' as const,reaction:row};}
+  async removeReaction(id:string,userId:string,messageId:string,emoji:string){if(!(await this.getMembership(id,userId)))return {kind:'not-found' as const};const message=await this.getMessage(id,messageId);if(!message)return {kind:'message-not-found' as const};await db.delete(messageReactions).where(and(eq(messageReactions.messageId,messageId),eq(messageReactions.userId,userId),eq(messageReactions.emoji,emoji)));return {kind:'ok' as const};}
   listMembers(id:string){return db.select({userId:users.id,displayName:users.displayName,avatarUrl:users.avatarUrl,role:conversationMembers.role,joinedAt:conversationMembers.joinedAt,joinedSequence:conversationMembers.joinedSequence,deliveredSequence:sql<number>`COALESCE(${conversationMemberReceipts.deliveredSequence},0)`,readSequence:sql<number>`COALESCE(${conversationMemberReceipts.readSequence},0)`,lastSeenAt:userPresence.lastSeenAt}).from(conversationMembers).innerJoin(users,eq(users.id,conversationMembers.userId)).leftJoin(conversationMemberReceipts,and(eq(conversationMemberReceipts.conversationId,id),eq(conversationMemberReceipts.userId,users.id))).leftJoin(userPresence,eq(userPresence.userId,users.id)).where(and(eq(conversationMembers.conversationId,id),isNull(conversationMembers.leftAt)));}
   listMessageRecipientIds(id:string,sequence:number){return db.select({userId:conversationMembers.userId}).from(conversationMembers).where(and(eq(conversationMembers.conversationId,id),isNull(conversationMembers.leftAt),sql`${conversationMembers.joinedSequence} <= ${sequence}`));}
   listConversations(userId:string){return db.select({

@@ -83,6 +83,7 @@ export const conversationMembers = pgTable('conversation_members', {
   joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   joinedSequence: integer('joined_sequence').notNull().default(1),
   notificationsMuted: boolean('notifications_muted').notNull().default(false),
+  quickEmoji: text('quick_emoji').notNull().default('👍'),
   leftAt: timestamp('left_at', { withTimezone: true })
 }, (table) => [
   uniqueIndex('conversation_members_active_uq').on(table.conversationId, table.userId).where(sql`${table.leftAt} IS NULL`),
@@ -120,6 +121,18 @@ export const messages = pgTable('messages', {
   check('messages_sequence_positive_ck', sql`${table.sequence} >= 1`),
   check('messages_deleted_body_ck', sql`${table.deletedAt} IS NULL OR ${table.body} = ''`),
   check('messages_single_author_ck', sql`((${table.senderId} IS NOT NULL)::int + (${table.assistantId} IS NOT NULL)::int) = 1`)
+]);
+
+
+export const messageReactions = pgTable('message_reactions', {
+  id: text('id').primaryKey(),
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  emoji: text('emoji').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('message_reactions_message_user_emoji_uq').on(table.messageId, table.userId, table.emoji),
+  index('message_reactions_message_idx').on(table.messageId)
 ]);
 
 export const messageUserDeletions = pgTable('message_user_deletions', {
