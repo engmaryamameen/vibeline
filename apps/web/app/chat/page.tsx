@@ -35,6 +35,7 @@ function ChatApp() {
           onRequestConnection={chat.requestConnection}
           onRespondConnection={chat.respondConnection}
           onRefreshRequests={chat.loadConnectionRequests}
+          onLogout={chat.logout}
         />
         <ConversationThread
           className="col-span-4 md:col-span-5 lg:col-span-9"
@@ -53,6 +54,7 @@ function ChatApp() {
           onBack={() => chat.setSelectedId(null)}
           onLoadOlder={() => report(chat.loadOlder())}
           onSend={chat.send}
+          onLoadMedia={chat.loadMedia}
           onAddReaction={chat.addReaction}
           onRemoveReaction={chat.removeReaction}
           onSetQuickEmoji={chat.setQuickEmoji}
