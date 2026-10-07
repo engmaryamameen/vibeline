@@ -12,7 +12,7 @@ const toMessage=(message:PersistedMessage,attachments:Message['attachments']=[])
 class ChatService {
   private logger:FastifyBaseLogger|undefined;
   setLogger(logger:FastifyBaseLogger){this.logger=logger;}
-  async getMessageForRealtime(conversationId:string,messageId:string){const message=await chatRepository.getMessage(conversationId,messageId);return message?toMessage(message):undefined;}
+  async getMessageForRealtime(conversationId:string,messageId:string){const message=await chatRepository.getMessage(conversationId,messageId);if(!message)return undefined;const attachments=await chatRepository.listAttachments([messageId]);return toMessage(message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})));}
   async createConversation(userId:string,participantUserIds:string[],type:'direct'|'group',title?:string){
     const participants=[...new Set(participantUserIds)];
     if(participants.includes(userId))throw new AppError(400,'INVALID_PARTICIPANTS','Do not include yourself as a participant');
@@ -70,7 +70,7 @@ class ChatService {
   async listMessages(userId:string,conversationId:string,before:number|undefined,after:number|undefined,limit:number){
     const rows=await chatRepository.listMessages(conversationId,userId,before,after,limit);
     if(!rows)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    const ordered=after===undefined?rows.reverse():rows;const attachments=await chatRepository.listAttachments(ordered.map(m=>m.id));return ordered.map(message=>toMessage(message,attachments.filter(a=>a.messageId===message.id).map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position}))));
+    const ordered=after===undefined?rows.reverse():rows;const attachments=await chatRepository.listAttachments(ordered.map(m=>m.id));return ordered.map(message=>toMessage(message,attachments.filter(a=>a.messageId===message.id).map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position}))));
   }
 
   async getQuickEmoji(userId:string,conversationId:string){const emoji=await chatRepository.getQuickEmoji(conversationId,userId);if(!emoji)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');return emoji;}
@@ -83,8 +83,8 @@ class ChatService {
     const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body,mediaAssetIds);
     if(result&&'invalidAttachments' in result)throw new AppError(400,'INVALID_ATTACHMENTS','One or more attachments are unavailable');
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    if(result.created){const attachments=await chatRepository.listAttachments([result.message.id]);const hydrated=toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})));void this.publish(conversationId,'message.created',hydrated);void this.notifyMessage(userId,conversationId,result.message.sequence,body);}
-    const attachments=await chatRepository.listAttachments([result.message.id]);return {...result,message:toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})))};
+    if(result.created){const attachments=await chatRepository.listAttachments([result.message.id]);const hydrated=toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})));void this.publish(conversationId,'message.created',hydrated);void this.notifyMessage(userId,conversationId,result.message.sequence,body,attachments.length);}
+    const attachments=await chatRepository.listAttachments([result.message.id]);return {...result,message:toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})))};
   }
 
   async editMessage(userId:string,conversationId:string,messageId:string,body:string){
@@ -112,7 +112,7 @@ class ChatService {
 
   async publishPersistedMessage(conversationId:string,message:PersistedMessage){await this.publish(conversationId,'message.created',toMessage(message));}
 
-  private async notifyMessage(senderId:string,conversationId:string,sequence:number,body:string){try{const [sender,recipients]=await Promise.all([userRepository.findById(senderId),chatRepository.listMessageRecipientIds(conversationId,sequence)]);const preview=body.length>120?`${body.slice(0,117)}…`:body;for(const recipient of recipients)if(recipient.userId!==senderId)void notificationService.notify(recipient.userId,'message',{title:sender?.displayName??'New message',body:preview,url:`/chat?conversation=${conversationId}`,tag:`conversation:${conversationId}`,conversationId});}catch(error){this.logger?.error({error,operation:'push.message',conversationId},'message notification scheduling failed');}}
+  private async notifyMessage(senderId:string,conversationId:string,sequence:number,body:string,attachmentCount=0){try{const [sender,recipients]=await Promise.all([userRepository.findById(senderId),chatRepository.listMessageRecipientIds(conversationId,sequence)]);const rawPreview=body|| (attachmentCount===1?'📷 Photo':attachmentCount>1?`📷 ${attachmentCount} photos`:'New message');const preview=rawPreview.length>120?`${rawPreview.slice(0,117)}…`:rawPreview;for(const recipient of recipients)if(recipient.userId!==senderId)void notificationService.notify(recipient.userId,'message',{title:sender?.displayName??'New message',body:preview,url:`/chat?conversation=${conversationId}`,tag:`conversation:${conversationId}`,conversationId});}catch(error){this.logger?.error({error,operation:'push.message',conversationId},'message notification scheduling failed');}}
 
   private assertMembershipMutation(result:'ok'|'not-found'|'direct'|'forbidden'){
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
