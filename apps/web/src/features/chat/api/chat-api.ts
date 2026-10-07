@@ -1,6 +1,6 @@
 import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,connectionRequestsResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
 import type { ConversationSummary,Message,MessageReaction,UserSearchResult } from '@vibeline/contracts';
-export type AuthorizedRequest=<T>(path:string,options?:{method?:'GET'|'POST'|'PUT'|'PATCH'|'DELETE';body?:unknown;responseSchema?:{parse:(value:unknown)=>T}})=>Promise<T>;
+export type AuthorizedRequest=<T>(path:string,options?:{method?:'GET'|'POST'|'PUT'|'PATCH'|'DELETE';body?:unknown;rawBody?:BodyInit;headers?:Record<string,string>;responseType?:'json'|'blob';responseSchema?:{parse:(value:unknown)=>T}})=>Promise<T>;
 export const chatApi=(request:AuthorizedRequest)=>({
  listConversations:()=>request('/chat/conversations',{responseSchema:conversationsResponseSchema}),
  getConversation:(id:string)=>request(`/chat/conversations/${id}`,{responseSchema:conversationDetailResponseSchema}),
@@ -10,7 +10,9 @@ export const chatApi=(request:AuthorizedRequest)=>({
  removeReaction:(id:string,messageId:string,emoji:string)=>request<void>(`/chat/conversations/${id}/messages/${messageId}/reactions`,{method:'DELETE',body:{emoji}}),
  getQuickEmoji:(id:string)=>request<{quickEmoji:string}>(`/chat/conversations/${id}/quick-emoji`),
  setQuickEmoji:(id:string,emoji:string)=>request<{quickEmoji:string}>(`/chat/conversations/${id}/quick-emoji`,{method:'PUT',body:{emoji}}),
- sendMessage:(id:string,body:string,clientMessageId=crypto.randomUUID())=>request(`/chat/conversations/${id}/messages`,{method:'POST',body:{clientMessageId,body},responseSchema:messageResponseSchema}),
+ loadMedia:(url:string)=>request<Blob>(url,{responseType:'blob'}),
+ uploadImage:(file:File)=>request<{asset:{id:string;url:string;mimeType:string;sizeBytes:number;originalFilename?:string}}>('/media/assets',{method:'POST',rawBody:file,headers:{'content-type':file.type||'application/octet-stream','x-file-name':encodeURIComponent(file.name)}}),
+ sendMessage:(id:string,body:string,mediaAssetIds:string[]=[],clientMessageId=crypto.randomUUID())=>request(`/chat/conversations/${id}/messages`,{method:'POST',body:{clientMessageId,body,mediaAssetIds},responseSchema:messageResponseSchema}),
  editMessage:(id:string,messageId:string,body:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'PATCH',body:{body},responseSchema:messageResponseSchema}),
  deleteMessage:(id:string,messageId:string,scope:'me'|'everyone')=>request(`/chat/conversations/${id}/messages/${messageId}?scope=${scope}`,{method:'DELETE',responseSchema:messageResponseSchema}),
  getAssistantState:(id:string)=>request(`/chat/conversations/${id}/assistant`,{responseSchema:assistantStateResponseSchema}),

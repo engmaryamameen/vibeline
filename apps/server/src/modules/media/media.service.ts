@@ -1,0 +1,7 @@
+import { randomUUID } from 'node:crypto';import { AppError } from '@/common/errors/app-error';import { mediaRepository } from './media.repository';import { mediaStorage } from './media.storage';
+const MAX=10*1024*1024;
+const detectedMime=(b:Buffer)=>{if(b.length>=8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return'image/png';if(b.length>=3&&b[0]===255&&b[1]===216&&b[2]===255)return'image/jpeg';if(b.length>=6&&(b.subarray(0,6).toString()==='GIF87a'||b.subarray(0,6).toString()==='GIF89a'))return'image/gif';if(b.length>=12&&b.subarray(0,4).toString()==='RIFF'&&b.subarray(8,12).toString()==='WEBP')return'image/webp';};
+export const mediaService={
+ async upload(userId:string,data:Buffer,filename?:string){if(!data.length||data.length>MAX)throw new AppError(400,'INVALID_MEDIA_SIZE','Images must be between 1 byte and 10 MB');const mime=detectedMime(data);if(!mime)throw new AppError(400,'UNSUPPORTED_MEDIA','Only JPEG, PNG, WebP, and GIF images are supported');const id=randomUUID(),key=`${id}`;await mediaStorage.put(key,data);try{return await mediaRepository.create({id,ownerUserId:userId,storageKey:key,mimeType:mime,sizeBytes:data.length,originalFilename:filename?.slice(0,255)});}catch(e){await mediaStorage.delete(key);throw e;}},
+ async content(id:string){const asset=await mediaRepository.find(id);if(!asset)throw new AppError(404,'MEDIA_NOT_FOUND','Media not found');return {asset,data:await mediaStorage.get(asset.storageKey)};}
+};

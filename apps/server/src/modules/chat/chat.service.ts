@@ -6,8 +6,8 @@ import type { FastifyBaseLogger } from 'fastify';
 import { userRepository } from '@/repositories/user.repository';
 import { notificationService } from '@/modules/notification/notification.service';
 
-type PersistedMessage = Omit<Message,'senderId'|'assistantId'|'createdAt'|'editedAt'|'deletedAt'> & { senderId:string|null; assistantId:string|null; createdAt:Date|string; editedAt:Date|string|null; deletedAt:Date|string|null };
-const toMessage=(message:PersistedMessage):Message=>({id:message.id,conversationId:message.conversationId,...(message.senderId?{senderId:message.senderId}:{}),...(message.assistantId?{assistantId:message.assistantId}:{}),clientMessageId:message.clientMessageId,sequence:message.sequence,body:message.body,createdAt:message.createdAt instanceof Date?message.createdAt.toISOString():message.createdAt,...(message.editedAt?{editedAt:message.editedAt instanceof Date?message.editedAt.toISOString():message.editedAt}:{}),...(message.deletedAt?{deletedAt:message.deletedAt instanceof Date?message.deletedAt.toISOString():message.deletedAt}:{})});
+type PersistedMessage = Omit<Message,'senderId'|'assistantId'|'attachments'|'createdAt'|'editedAt'|'deletedAt'> & { senderId:string|null; assistantId:string|null; createdAt:Date|string; editedAt:Date|string|null; deletedAt:Date|string|null };
+const toMessage=(message:PersistedMessage,attachments:Message['attachments']=[]):Message=>({id:message.id,conversationId:message.conversationId,...(message.senderId?{senderId:message.senderId}:{}),...(message.assistantId?{assistantId:message.assistantId}:{}),clientMessageId:message.clientMessageId,sequence:message.sequence,body:message.body,attachments,createdAt:message.createdAt instanceof Date?message.createdAt.toISOString():message.createdAt,...(message.editedAt?{editedAt:message.editedAt instanceof Date?message.editedAt.toISOString():message.editedAt}:{}),...(message.deletedAt?{deletedAt:message.deletedAt instanceof Date?message.deletedAt.toISOString():message.deletedAt}:{})});
 
 class ChatService {
   private logger:FastifyBaseLogger|undefined;
@@ -70,7 +70,7 @@ class ChatService {
   async listMessages(userId:string,conversationId:string,before:number|undefined,after:number|undefined,limit:number){
     const rows=await chatRepository.listMessages(conversationId,userId,before,after,limit);
     if(!rows)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    return after===undefined?rows.reverse():rows;
+    const ordered=after===undefined?rows.reverse():rows;const attachments=await chatRepository.listAttachments(ordered.map(m=>m.id));return ordered.map(message=>toMessage(message,attachments.filter(a=>a.messageId===message.id).map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position}))));
   }
 
   async getQuickEmoji(userId:string,conversationId:string){const emoji=await chatRepository.getQuickEmoji(conversationId,userId);if(!emoji)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');return emoji;}
@@ -79,11 +79,12 @@ class ChatService {
   async addReaction(userId:string,conversationId:string,messageId:string,emoji:string){const result=await chatRepository.addReaction(conversationId,userId,messageId,emoji);if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');await this.publishReaction(conversationId,messageId);return result.reaction;}
   async removeReaction(userId:string,conversationId:string,messageId:string,emoji:string){const result=await chatRepository.removeReaction(conversationId,userId,messageId,emoji);if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');await this.publishReaction(conversationId,messageId);}
 
-  async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string){
-    const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body);
+  async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string,mediaAssetIds:string[]=[]){
+    const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body,mediaAssetIds);
+    if(result&&'invalidAttachments' in result)throw new AppError(400,'INVALID_ATTACHMENTS','One or more attachments are unavailable');
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
-    if(result.created){void this.publish(conversationId,'message.created',toMessage(result.message));void this.notifyMessage(userId,conversationId,result.message.sequence,body);}
-    return result;
+    if(result.created){const attachments=await chatRepository.listAttachments([result.message.id]);const hydrated=toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})));void this.publish(conversationId,'message.created',hydrated);void this.notifyMessage(userId,conversationId,result.message.sequence,body);}
+    const attachments=await chatRepository.listAttachments([result.message.id]);return {...result,message:toMessage(result.message,attachments.map(a=>({id:a.id,mediaAssetId:a.mediaAssetId,url:`/v1/media/assets/${a.mediaAssetId}/content`,mimeType:a.mimeType,sizeBytes:a.sizeBytes,...(a.originalFilename?{originalFilename:a.originalFilename}:{}),position:a.position})))};
   }
 
   async editMessage(userId:string,conversationId:string,messageId:string,body:string){
