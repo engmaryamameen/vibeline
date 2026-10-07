@@ -82,6 +82,7 @@ export const conversationMembers = pgTable('conversation_members', {
   role: conversationMemberRole('role').notNull().default('member'),
   joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   joinedSequence: integer('joined_sequence').notNull().default(1),
+  notificationsMuted: boolean('notifications_muted').notNull().default(false),
   leftAt: timestamp('left_at', { withTimezone: true })
 }, (table) => [
   uniqueIndex('conversation_members_active_uq').on(table.conversationId, table.userId).where(sql`${table.leftAt} IS NULL`),
