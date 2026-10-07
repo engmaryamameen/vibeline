@@ -41,6 +41,8 @@ function ChatApp() {
           conversation={chat.selectedConversation}
           currentUserId={chat.currentUser?.id}
           messages={chat.messages}
+          reactions={chat.reactions}
+          quickEmoji={chat.quickEmoji}
           members={chat.members}
           assistant={chat.assistant}
           assistantGeneration={chat.assistantGeneration}
@@ -51,6 +53,9 @@ function ChatApp() {
           onBack={() => chat.setSelectedId(null)}
           onLoadOlder={() => report(chat.loadOlder())}
           onSend={chat.send}
+          onAddReaction={chat.addReaction}
+          onRemoveReaction={chat.removeReaction}
+          onSetQuickEmoji={chat.setQuickEmoji}
           onEdit={chat.editMessage}
           onDelete={chat.deleteMessage}
           memberSearch={chat.search}
