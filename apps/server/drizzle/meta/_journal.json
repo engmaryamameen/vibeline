@@ -108,18 +108,18 @@
       "breakpoints": true
     },
     {
-      "idx": 14,
-      "version": "7",
-      "when": 1791265020000,
-      "tag": "0014_conversation_notification_preferences",
-      "breakpoints": true
-    },
-    {
       "idx": 15,
       "version": "7",
       "when": 1791267600000,
       "tag": "0015_chat_emoji_reactions",
       "breakpoints": true
-    }
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791351000000,
+      "tag": "0016_media_assets",
+      "breakpoints": true
+    }    
   ]
 }

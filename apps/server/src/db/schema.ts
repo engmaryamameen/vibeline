@@ -124,6 +124,35 @@ export const messages = pgTable('messages', {
 ]);
 
 
+export const mediaAssets = pgTable('media_assets', {
+  id: text('id').primaryKey(),
+  ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storageKey: text('storage_key').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  originalFilename: text('original_filename'),
+  status: text('status').notNull().default('ready'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('media_assets_storage_key_uq').on(table.storageKey),
+  index('media_assets_owner_idx').on(table.ownerUserId, table.createdAt),
+  check('media_assets_size_ck', sql`${table.sizeBytes} > 0`),
+  check('media_assets_status_ck', sql`${table.status} IN ('ready','attached')`)
+]);
+
+export const messageAttachments = pgTable('message_attachments', {
+  id: text('id').primaryKey(),
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  mediaAssetId: text('media_asset_id').notNull().references(() => mediaAssets.id, { onDelete: 'restrict' }),
+  position: integer('position').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('message_attachments_message_asset_uq').on(table.messageId, table.mediaAssetId),
+  uniqueIndex('message_attachments_message_position_uq').on(table.messageId, table.position),
+  index('message_attachments_asset_idx').on(table.mediaAssetId),
+  check('message_attachments_position_ck', sql`${table.position} >= 0`)
+]);
+
 export const messageReactions = pgTable('message_reactions', {
   id: text('id').primaryKey(),
   messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
