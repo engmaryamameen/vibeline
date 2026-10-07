@@ -73,6 +73,12 @@ class ChatService {
     return after===undefined?rows.reverse():rows;
   }
 
+  async getQuickEmoji(userId:string,conversationId:string){const emoji=await chatRepository.getQuickEmoji(conversationId,userId);if(!emoji)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');return emoji;}
+  async setQuickEmoji(userId:string,conversationId:string,emoji:string){const row=await chatRepository.setQuickEmoji(conversationId,userId,emoji);if(!row)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');return row.quickEmoji;}
+  async listReactions(userId:string,conversationId:string){const rows=await chatRepository.listReactions(conversationId,userId);if(!rows)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');return rows.map(r=>({...r,createdAt:r.createdAt.toISOString()}));}
+  async addReaction(userId:string,conversationId:string,messageId:string,emoji:string){const result=await chatRepository.addReaction(conversationId,userId,messageId,emoji);if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');await this.publishReaction(conversationId,messageId);return result.reaction;}
+  async removeReaction(userId:string,conversationId:string,messageId:string,emoji:string){const result=await chatRepository.removeReaction(conversationId,userId,messageId,emoji);if(result.kind==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');if(result.kind==='message-not-found')throw new AppError(404,'MESSAGE_NOT_FOUND','Message not found');await this.publishReaction(conversationId,messageId);}
+
   async sendMessage(userId:string,conversationId:string,clientMessageId:string,body:string){
     const result=await chatRepository.sendMessage(conversationId,userId,clientMessageId,body);
     if(!result||'forbidden' in result)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
@@ -118,6 +124,8 @@ class ChatService {
     if(!membership)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     return membership;
   }
+
+  private async publishReaction(conversationId:string,messageId:string){try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,2_147_483_647)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type:'message.reaction',conversationId,payload:{messageId}});}catch(error){this.logger?.error({error,operation:'chat.realtime.reaction',conversationId,messageId},'reaction realtime publish failed');}}
 
   private async publish(conversationId:string,type:ChatEventType,payload:Message){
     try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,payload.sequence)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type,conversationId,payload});}
