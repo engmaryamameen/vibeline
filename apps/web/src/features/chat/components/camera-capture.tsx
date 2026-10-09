@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image as ImageIcon, RefreshCw, X, RotateCcw, Send } from 'lucide-react';
 
-type Props = { open: boolean; sending: boolean; onClose: () => void; onChooseLibrary: () => void; onSend: (file: File) => Promise<void> };
+type Props = { open: boolean; sending: boolean; onClose: () => void; onChooseLibrary: () => void; libraryFile: File | null; onSend: (file: File) => Promise<void> };
 const MAX_RECORDING_MS = 60_000;
 const EFFECTS = [{ name: 'Original', filter: 'none' }, { name: 'Warm', filter: 'sepia(0.35) saturate(1.25)' }, { name: 'Mono', filter: 'grayscale(1)' }, { name: 'Cool', filter: 'hue-rotate(20deg) saturate(0.85)' }, { name: 'Vivid', filter: 'contrast(1.15) saturate(1.5)' }] as const;
 const VIDEO_TYPES = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
 
-export function CameraCapture({ open, sending, onClose, onChooseLibrary, onSend }: Props) {
+export function CameraCapture({ open, sending, onClose, onChooseLibrary, libraryFile, onSend }: Props) {
   const [mode, setMode] = useState<'photo' | 'video'>('photo');
   const [effect, setEffect] = useState<(typeof EFFECTS)[number]['name']>('Original');
   const [showEffects, setShowEffects] = useState(false);
@@ -72,6 +72,17 @@ export function CameraCapture({ open, sending, onClose, onChooseLibrary, onSend 
       stopStream();
     };
   }, [open, facing, file, stopStream]);
+
+  useEffect(() => {
+    if (!open || !libraryFile) return;
+    if (!libraryFile.type.startsWith('image/') && !libraryFile.type.startsWith('video/')) {
+      setError('Choose an image or video file.');
+      return;
+    }
+    stopStream();
+    setError('');
+    setFile(libraryFile);
+  }, [libraryFile, open, stopStream]);
 
   useEffect(() => {
     if (!file) { setFileUrl(undefined); return; }
