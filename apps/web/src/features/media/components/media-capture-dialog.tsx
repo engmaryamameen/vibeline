@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { maxBytesForMediaKind, mediaKindFromMimeType } from '@vibeline/contracts';
 import { useBodyScrollLock } from '@/src/shared/hooks/use-body-scroll-lock';
+import { useDismiss } from '@/src/shared/hooks/use-dismiss';
 import type { EffectName } from '../lib/editor-model';
 import { CameraView } from './camera-view';
 import { MediaEditor } from './media-editor';
@@ -52,14 +53,7 @@ export function MediaCaptureDialog({
     setLibraryError('');
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  useDismiss({ active: open, onDismiss: onClose, closeOnOutside: false });
 
   if (!open) return null;
 

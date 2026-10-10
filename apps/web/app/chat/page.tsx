@@ -45,7 +45,7 @@ function ChatApp() {
           onRequestConnection={chat.requestConnection}
           onRespondConnection={chat.respondConnection}
           onRefreshRequests={chat.loadConnectionRequests}
-          onOpenCamera={stories.openComposer}
+          onAddStory={stories.openComposer}
           onLogout={chat.logout}
           stories={stories}
         />
