@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Crop as CropIcon, RotateCcw, Send, SlidersHorizontal, Smile, Type, Undo2, X } from 'lucide-react';
 import { useMediaEditor } from '../hooks/use-media-editor';
+import { useMediaExport } from '../hooks/use-media-export';
 import { useObjectUrl } from '../hooks/use-object-url';
 import { cropFromControls, DEFAULT_CROP_CONTROLS, type CropControls } from '../lib/crop';
 import { hasEdits, type EffectName } from '../lib/editor-model';
@@ -14,7 +15,6 @@ import { EditorStickerPanel } from './editor-sticker-panel';
 import { EditorTextPanel } from './editor-text-panel';
 import { EffectsRail } from './effects-rail';
 import { MediaExportFallback } from './media-export-fallback';
-import { useMediaExport } from '../hooks/use-media-export';
 
 type Tool = 'text' | 'adjust' | 'crop' | 'stickers';
 
