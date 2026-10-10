@@ -23,8 +23,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../../packages/ui/src/components/portal.tsx"  
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

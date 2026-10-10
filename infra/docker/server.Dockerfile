@@ -13,6 +13,7 @@ FROM node:24.21.0-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup -S app && adduser -S app -G app
+RUN mkdir -p /data/media && chown -R app:app /data
 COPY --from=build --chown=app:app /app/apps/server/dist ./dist
 COPY --from=build --chown=app:app /app/apps/server/package.json ./package.json
 COPY --from=build --chown=app:app /app/node_modules ./node_modules
