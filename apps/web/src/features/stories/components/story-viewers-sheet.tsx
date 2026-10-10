@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { StoryViewer } from '@vibeline/contracts';
 import { X } from 'lucide-react';
 import { useAuthorizedRequest } from '@/src/lib/authorized-request';
 import { ChatAvatar } from '@/src/features/chat/components/chat-avatar';
+import { useDismiss } from '@/src/shared/hooks/use-dismiss';
 import { storyApi } from '../api/story-api';
 
 type Props = { storyId: string; onClose: () => void };
@@ -12,9 +13,12 @@ type Props = { storyId: string; onClose: () => void };
 export function StoryViewersSheet({ storyId, onClose }: Props) {
   const request = useAuthorizedRequest();
   const api = useMemo(() => storyApi(request), [request]);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const [viewers, setViewers] = useState<StoryViewer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useDismiss({ active: true, onDismiss: onClose, ref: sheetRef });
 
   useEffect(() => {
     let cancelled = false;
@@ -36,7 +40,7 @@ export function StoryViewersSheet({ storyId, onClose }: Props) {
   }, [api, storyId]);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-20 max-h-[60%] overflow-hidden rounded-t-[24px] bg-[#16181B] text-white motion-safe:animate-slide-up">
+    <div ref={sheetRef} className="absolute inset-x-0 bottom-0 z-20 max-h-[60%] overflow-hidden rounded-t-[24px] bg-[#16181B] text-white motion-safe:animate-slide-up">
       <header className="flex h-14 items-center justify-between border-b border-white/10 px-4">
         <h3 className="text-[15px] font-semibold">
           Viewed by {viewers.length > 0 && <span className="text-white/55">{viewers.length}</span>}

@@ -36,6 +36,9 @@ export function VoiceRecorder({ disabled, onCancel, onSend }: Props) {
   const timerRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const previewUrlRef = useRef('');
+  const onCancelRef = useRef(onCancel);
+
+  onCancelRef.current = onCancel;
 
   const setPreviewUrl = useCallback((url: string) => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -74,7 +77,7 @@ export function VoiceRecorder({ disabled, onCancel, onSend }: Props) {
           const blob = new Blob(chunksRef.current, { type });
           chunksRef.current = [];
           if (!blob.size) {
-            onCancel();
+            onCancelRef.current();
             return;
           }
           fileRef.current = new File([blob], `voice-${Date.now()}.${extensionFor(type)}`, { type });
@@ -121,7 +124,7 @@ export function VoiceRecorder({ disabled, onCancel, onSend }: Props) {
       if (context) void context.close();
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
-  }, [onCancel, setPreviewUrl]);
+  }, [setPreviewUrl]);
 
   useEffect(() => {
     if (state !== 'recording') return;
