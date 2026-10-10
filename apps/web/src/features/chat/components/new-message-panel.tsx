@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { UserSearchResult } from '@vibeline/contracts';
+import { chatIcons } from '@/src/shared/assets/svg/chat';
 import { ChatAvatar } from './chat-avatar';
 
 const RECENT_MS = 24 * 60 * 60 * 1000;
@@ -90,10 +91,10 @@ export function NewMessagePanel({ people, query, onQuery, onCancel, onStart, onC
 
       <button type="button" onClick={onCreateGroup} className="flex h-[62px] shrink-0 items-center px-[15px] text-left transition-colors hover:bg-black/[.025]">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black/[.04]">
-          <img src="/assets/chat/create-group.svg" alt="" width={22} height={13} />
+          <img src={chatIcons.createGroup} alt="" width={22} height={13} />
         </span>
         <strong className="ml-3 min-w-0 flex-1 truncate text-[17px] font-semibold leading-5 tracking-[-.41px] text-black">Create a New Group</strong>
-        <img src="/assets/chat/chevron-right.svg" alt="" width={8} height={13} className="ml-3 shrink-0" />
+        <img src={chatIcons.chevronRight} alt="" width={8} height={13} className="ml-3 shrink-0" />
       </button>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(16px,env(safe-area-inset-bottom))] [scrollbar-gutter:stable]">
