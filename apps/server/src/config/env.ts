@@ -36,7 +36,14 @@ const envSchema = z.object({
   OPENAI_RESPONSES_URL: optionalUrl,
   WEB_PUSH_PUBLIC_KEY: optionalNonEmpty,
   WEB_PUSH_PRIVATE_KEY: optionalNonEmpty,
-  WEB_PUSH_SUBJECT: optionalNonEmpty
+  WEB_PUSH_SUBJECT: optionalNonEmpty,
+
+  CALL_STUN_URLS: z.string().default('stun:stun.l.google.com:19302'),
+  CALL_TURN_URLS: optionalNonEmpty,
+  CALL_TURN_SECRET: optionalNonEmpty,
+  CALL_TURN_USERNAME: optionalNonEmpty,
+  CALL_TURN_PASSWORD: optionalNonEmpty,
+  CALL_TURN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(600)
 }).superRefine((value, ctx) => {
   const validateProvider = (name: 'GOOGLE') => {
     const fields = [`${name}_CLIENT_ID`, `${name}_CLIENT_SECRET`, `${name}_CALLBACK_URL`] as const;
@@ -53,6 +60,14 @@ const envSchema = z.object({
   const pushFields = ['WEB_PUSH_PUBLIC_KEY','WEB_PUSH_PRIVATE_KEY','WEB_PUSH_SUBJECT'] as const;
   const pushConfigured = pushFields.filter(field => Boolean(value[field]));
   if (pushConfigured.length > 0 && pushConfigured.length < pushFields.length) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [pushConfigured[0] ?? 'WEB_PUSH_PUBLIC_KEY'], message: 'Web Push must provide public key, private key, and subject together' });
+
+  if (value.CALL_TURN_URLS && !value.CALL_TURN_SECRET && !(value.CALL_TURN_USERNAME && value.CALL_TURN_PASSWORD)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['CALL_TURN_SECRET'],
+      message: 'TURN requires either CALL_TURN_SECRET for time-limited credentials or CALL_TURN_USERNAME with CALL_TURN_PASSWORD'
+    });
+  }
 
   if (value.NODE_ENV === 'production') {
     const appUrl = new URL(value.APP_URL);
