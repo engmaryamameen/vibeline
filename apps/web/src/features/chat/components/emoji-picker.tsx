@@ -2,6 +2,7 @@
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { Search,X } from 'lucide-react';
 import { cn } from '@vibeline/utils';
+import { useDismiss } from '@/src/shared/hooks/use-dismiss';
 
 const RECENT_KEY='vibeline:recent-emojis';
 const RECENT_LIMIT=12;
@@ -22,12 +23,13 @@ type Props={onSelect:(emoji:string)=>void;onClose:()=>void;className?:string;tit
 export function EmojiPicker({onSelect,onClose,className='',title='Emoji'}:Props){
  const panelRef=useRef<HTMLDivElement>(null);const searchRef=useRef<HTMLInputElement>(null);const [query,setQuery]=useState('');const [visible,setVisible]=useState(false);const [recent,setRecent]=useState<string[]>([]);
  const close=useCallback(()=>{setVisible(false);window.setTimeout(onClose,140)},[onClose]);
- useEffect(()=>{setRecent(readRecent());const frame=requestAnimationFrame(()=>setVisible(true));const key=(event:KeyboardEvent)=>{if(event.key==='Escape')close()};document.addEventListener('keydown',key);return()=>{cancelAnimationFrame(frame);document.removeEventListener('keydown',key)}},[close]);
+ useEffect(()=>{setRecent(readRecent());const frame=requestAnimationFrame(()=>setVisible(true));return()=>cancelAnimationFrame(frame)},[]);
+ useDismiss({active:true,onDismiss:close,closeOnOutside:false});
  const filtered=useMemo(()=>query.trim()?ALL.filter(emoji=>emoji.includes(query.trim())):null,[query]);
  const sections=useMemo(()=>recent.length?[['Recent',recent] as const,...GROUPS]:[...GROUPS],[recent]);
  const choose=(emoji:string)=>{onSelect(emoji);setRecent(previous=>writeRecent(emoji,previous))};
- return <div className="fixed inset-0 z-[80] md:pointer-events-none" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)close()}}>
-  <button type="button" aria-label="Close emoji picker" onClick={close} className={cn('absolute inset-0 bg-black/20 transition-opacity duration-150 md:bg-transparent',visible?'opacity-100':'opacity-0')}/>
+ return <div className="fixed inset-0 z-[80]" role="presentation">
+  <button type="button" aria-label="Close emoji picker" onClick={close} className={cn('absolute inset-0 bg-black/20 transition-opacity duration-150 motion-reduce:transition-none md:bg-transparent',visible?'opacity-100':'opacity-0')}/>
   <div ref={panelRef} role="dialog" aria-modal="true" aria-label={title} className={cn('pointer-events-auto absolute inset-x-0 bottom-0 max-h-[72dvh] rounded-t-[26px] border border-black/[.08] bg-white shadow-[0_-12px_40px_rgba(0,0,0,.14)] transition duration-150 ease-out md:inset-auto md:w-[340px] md:max-h-none md:rounded-[20px] md:shadow-[0_16px_50px_rgba(0,0,0,.18)]',visible?'translate-y-0 scale-100 opacity-100':'translate-y-3 scale-[.985] opacity-0',className)}>
    <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-black/15 md:hidden"/>
    <div className="flex items-center gap-2 px-4 pb-2 pt-3"><div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-black/[.05] px-3"><Search size={16} className="shrink-0 text-black/35"/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} aria-label="Search emoji" placeholder="Search emoji" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-black/35"/></div><button type="button" onClick={close} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-black/55 hover:bg-black/[.05]"><X size={18}/></button></div>

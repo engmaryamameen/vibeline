@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { AuthGuard } from '@/src/features/auth/components/auth-guard';
 import { CallOverlay } from '@/src/features/calls/components/call-overlay';
 import { useCallSession } from '@/src/features/calls/hooks/use-call-session';
@@ -16,8 +15,8 @@ function ChatApp() {
   const chat = useChatWorkspace();
   const call = useCallSession();
   const stories = useStories();
-  const [cameraOpen, setCameraOpen] = useState(false);
 
+  const callActive = call.phase !== 'idle';
   const openStoryGroup = stories.groups.find((group) => group.author.userId === stories.openAuthorId);
 
   const report = (action: Promise<unknown>) => {
@@ -46,7 +45,7 @@ function ChatApp() {
           onRequestConnection={chat.requestConnection}
           onRespondConnection={chat.respondConnection}
           onRefreshRequests={chat.loadConnectionRequests}
-          onOpenCamera={() => setCameraOpen(true)}
+          onOpenCamera={stories.openComposer}
           onLogout={chat.logout}
           stories={stories}
         />
@@ -81,7 +80,7 @@ function ChatApp() {
           onRequestAssistant={chat.requestAssistant}
           onAddMember={chat.addMember}
           callsSupported={call.supported}
-          callBusy={call.phase !== 'idle'}
+          callBusy={callActive}
           onStartCall={(media) => {
             if (chat.selectedId) void call.start(chat.selectedId, media);
           }}
@@ -97,6 +96,7 @@ function ChatApp() {
           loading={stories.storiesLoading}
           error={stories.storiesError}
           isSelf={openStoryGroup.isSelf}
+          externalPause={callActive}
           onClose={stories.close}
           onViewed={stories.markViewed}
           onDelete={stories.remove}
@@ -104,7 +104,7 @@ function ChatApp() {
       )}
 
       <MediaCaptureDialog
-        open={stories.composerOpen}
+        open={stories.composerOpen && !callActive}
         sending={stories.publishing}
         sendLabel="Share"
         title="Add to your story"
@@ -113,20 +113,6 @@ function ChatApp() {
         onSend={async (file, caption) => {
           await stories.publish(file, chat.uploadMedia, caption);
           stories.closeComposer();
-        }}
-      />
-
-      <MediaCaptureDialog
-        open={cameraOpen}
-        sending={chat.sending}
-        title="Camera"
-        onClose={() => setCameraOpen(false)}
-        onSend={async (file) => {
-          if (!chat.selectedId) {
-            chat.setError('Open a conversation before sending media.');
-            return;
-          }
-          await chat.send('', [file]);
         }}
       />
 

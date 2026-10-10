@@ -21,11 +21,6 @@ import phoneBlue from './phone-blue.svg';
 import plus from './plus.svg';
 import profileAudio from './profile-audio.svg';
 import profileBell from './profile-bell.svg';
-import profileChevron from './profile-chevron.svg';
-import profileGroup from './profile-group.svg';
-import profileIgnore from './profile-ignore.svg';
-import profilePerson from './profile-person.svg';
-import profileSearch from './profile-search.svg';
 import profileVideo from './profile-video.svg';
 import requests from './requests.svg';
 import search from './search.svg';
@@ -60,11 +55,6 @@ export const chatIcons = {
   plus: plus.src,
   profileAudio: profileAudio.src,
   profileBell: profileBell.src,
-  profileChevron: profileChevron.src,
-  profileGroup: profileGroup.src,
-  profileIgnore: profileIgnore.src,
-  profilePerson: profilePerson.src,
-  profileSearch: profileSearch.src,
   profileVideo: profileVideo.src,
   requests: requests.src,
   search: search.src,

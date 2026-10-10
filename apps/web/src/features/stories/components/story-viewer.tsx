@@ -15,19 +15,26 @@ type Props = {
   loading: boolean;
   error: string;
   isSelf: boolean;
+  externalPause?: boolean;
   onClose: () => void;
   onViewed: (storyId: string) => void;
   onDelete: (storyId: string) => Promise<void>;
 };
 
-export function StoryViewer({ author, stories, loading, error, isSelf, onClose, onViewed, onDelete }: Props) {
+export function StoryViewer({ author, stories, loading, error, isSelf, externalPause = false, onClose, onViewed, onDelete }: Props) {
   const [durationMs, setDurationMs] = useState(5_000);
   const [mediaReady, setMediaReady] = useState(false);
   const [viewersOpen, setViewersOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const viewedRef = useRef(new Set<string>());
 
-  const playback = useStoryPlayback({ count: stories.length, durationMs, ready: mediaReady && !viewersOpen, onComplete: onClose });
+  const playback = useStoryPlayback({
+    count: stories.length,
+    durationMs,
+    ready: mediaReady && !viewersOpen && !externalPause,
+    onComplete: onClose
+  });
+  const held = playback.paused || viewersOpen || externalPause;
   const story = stories[playback.index];
 
   useEffect(() => {
@@ -132,7 +139,7 @@ export function StoryViewer({ author, stories, loading, error, isSelf, onClose, 
         ) : !story ? (
           <p className="px-8 text-center text-sm text-white/75">These stories are no longer available.</p>
         ) : (
-          <StoryMedia story={story} paused={playback.paused || viewersOpen} onReady={onMediaReady} onFailed={onMediaFailed} />
+          <StoryMedia story={story} paused={held} onReady={onMediaReady} onFailed={onMediaFailed} />
         )}
 
         {story && (
@@ -174,7 +181,7 @@ export function StoryViewer({ author, stories, loading, error, isSelf, onClose, 
           </>
         )}
 
-        {playback.paused && story && !viewersOpen && (
+        {held && story && !viewersOpen && (
           <span className="pointer-events-none absolute bottom-24 rounded-full bg-black/55 px-3 py-1 text-xs text-white/80">Paused</span>
         )}
 
