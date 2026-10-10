@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { storyAgeLabel, type Story, type StoryAuthor } from '@vibeline/contracts';
 import { ChevronLeft, ChevronRight, Eye, Trash2, X } from 'lucide-react';
 import { ChatAvatar } from '@/src/features/chat/components/chat-avatar';
+import { useBodyScrollLock } from '@/src/shared/hooks/use-body-scroll-lock';
+import { useDismiss } from '@/src/shared/hooks/use-dismiss';
 import { useStoryPlayback } from '../hooks/use-story-playback';
 import { StoryMedia } from './story-media';
 import { StoryProgressBar } from './story-progress-bar';
@@ -48,9 +50,12 @@ export function StoryViewer({ author, stories, loading, error, isSelf, externalP
   }, [story, isSelf, onViewed]);
 
   const { next, previous, pause, resume, paused } = playback;
+
+  useDismiss({ active: !viewersOpen, onDismiss: onClose, closeOnOutside: false });
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (viewersOpen) return;
       if (event.key === 'ArrowRight') next();
       if (event.key === 'ArrowLeft') previous();
       if (event.key === ' ') {
@@ -61,15 +66,9 @@ export function StoryViewer({ author, stories, loading, error, isSelf, externalP
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, next, previous, pause, resume, paused]);
+  }, [next, previous, pause, resume, paused, viewersOpen]);
 
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
+  useBodyScrollLock(true);
 
   const onMediaReady = useCallback((value: number) => {
     setDurationMs(value);

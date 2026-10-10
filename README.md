@@ -118,6 +118,21 @@ entry is never applied.
 | `pnpm --filter @vibeline/server db:seed` | Seed development data |
 | `pnpm --filter @vibeline/server test:integration` | Integration tests (needs `RUN_DB_TESTS=1` and a database) |
 
+## Reverse proxy requirements
+
+Two defaults will break the app if you put it behind your own proxy:
+
+- **Response buffering** must be off for `GET /v1/chat/events`. The realtime stream
+  carries messages, presence, call state and call signalling; a buffering proxy
+  delivers nothing. The route also needs a long read timeout (the server
+  heartbeats every 25s) and HTTP/1.1 upstream.
+- **Upload body size** must allow 100 MB. nginx defaults to 1 MB, which rejects
+  every video.
+
+`infra/nginx/nginx.conf` is configured for both, and forwards `X-Forwarded-For`
+so per-IP rate limiting sees real clients. Set `TRUST_PROXY=true` on the server
+when it sits behind a proxy you control.
+
 ## Operational notes
 
 - **Realtime.** The API publishes events through Postgres `pg_notify`; each
@@ -135,6 +150,12 @@ entry is never applied.
   that crashes mid-call does not leave either party permanently busy.
 - **Stories.** Expiry and visibility are enforced in SQL on every read, including
   the media route, so an expired or unconnected story cannot be fetched by URL.
+
+- **Fonts and icons.** Text faces load from Google Fonts over CSS `@import`, with
+  `preconnect` hints in the root layout. Icons are SVG files under
+  `apps/web/src/shared/assets/svg`, imported so they are hashed and bundled.
+  `public/` holds only `images/vibeline-bird-logo.svg`, which the push service
+  worker references by URL and therefore cannot be an import.
 
 More detail: `docs/architecture.md`, `docs/calling-architecture.md`,
 `docs/media-architecture.md`, `docs/stories-architecture.md`.
