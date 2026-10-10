@@ -1,9 +1,55 @@
-import { randomUUID } from 'node:crypto';import { AppError } from '@/common/errors/app-error';import { mediaRepository } from './media.repository';import { mediaStorage } from './media.storage';
-const MAX_IMAGE=10*1024*1024,MAX_AUDIO=25*1024*1024,MAX_VIDEO=100*1024*1024;
-const detectImage=(b:Buffer)=>{if(b.length>=8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return'image/png';if(b.length>=3&&b[0]===255&&b[1]===216&&b[2]===255)return'image/jpeg';if(b.length>=6&&(b.subarray(0,6).toString()==='GIF87a'||b.subarray(0,6).toString()==='GIF89a'))return'image/gif';if(b.length>=12&&b.subarray(0,4).toString()==='RIFF'&&b.subarray(8,12).toString()==='WEBP')return'image/webp';};
-const detectVideo=(b:Buffer,hint?:string)=>{if(b.length>=4&&b.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]))&&hint?.startsWith('video/webm'))return'video/webm';if(b.length>=12&&b.subarray(4,8).toString()==='ftyp'&&hint?.startsWith('video/mp4'))return'video/mp4';};
-const detectAudio=(b:Buffer,hint?:string)=>{if(b.length>=4&&b.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]))&&hint?.startsWith('audio/webm'))return'audio/webm';if(b.length>=4&&b.subarray(0,4).toString()==='OggS'&&hint?.startsWith('audio/ogg'))return'audio/ogg';if(b.length>=12&&b.subarray(4,8).toString()==='ftyp'&&hint?.startsWith('audio/mp4'))return'audio/mp4';};
-export const mediaService={
- async upload(userId:string,data:Buffer,filename?:string,mimeHint?:string){const mime=detectImage(data)??detectVideo(data,mimeHint)??detectAudio(data,mimeHint);if(!mime)throw new AppError(400,'UNSUPPORTED_MEDIA','Only supported image, audio, and WebM/MP4 video files are accepted');const max=mime.startsWith('video/')?MAX_VIDEO:mime.startsWith('audio/')?MAX_AUDIO:MAX_IMAGE;if(!data.length||data.length>max)throw new AppError(400,'INVALID_MEDIA_SIZE',`Media must be between 1 byte and ${max/1024/1024} MB`);const id=randomUUID(),key=`${id}`;await mediaStorage.put(key,data);try{return await mediaRepository.create({id,ownerUserId:userId,storageKey:key,mimeType:mime,sizeBytes:data.length,originalFilename:filename?.slice(0,255)});}catch(e){await mediaStorage.delete(key);throw e;}},
- async content(id:string){const asset=await mediaRepository.find(id);if(!asset)throw new AppError(404,'MEDIA_NOT_FOUND','Media not found');return {asset,data:await mediaStorage.get(asset.storageKey)};}
+import { randomUUID } from 'node:crypto';
+import { maxBytesForMediaKind, mediaAssetUrl, mediaKindFromMimeType } from '@vibeline/contracts';
+import { AppError } from '@/common/errors/app-error';
+import { mediaRepository, type StoredMediaAsset } from './media.repository';
+import { sniffMediaType } from './media.sniff';
+import { mediaStorage } from './media.storage';
+
+const toPublicAsset = (asset: StoredMediaAsset) => ({
+  id: asset.id,
+  url: mediaAssetUrl(asset.id),
+  mimeType: asset.mimeType,
+  sizeBytes: asset.sizeBytes,
+  originalFilename: asset.originalFilename ?? undefined
+});
+
+export const mediaService = {
+  async upload(userId: string, data: Buffer, filename?: string, declaredContentType?: string) {
+    const mimeType = sniffMediaType(data, declaredContentType);
+    if (!mimeType) {
+      throw new AppError(400, 'UNSUPPORTED_MEDIA', 'Only JPEG, PNG, WebP, GIF images, WebM/OGG/MP4 audio and WebM/MP4 video are accepted');
+    }
+
+    const kind = mediaKindFromMimeType(mimeType)!;
+    const maxBytes = maxBytesForMediaKind(kind);
+    if (!data.length || data.length > maxBytes) {
+      throw new AppError(400, 'INVALID_MEDIA_SIZE', `${kind} uploads must be between 1 byte and ${Math.floor(maxBytes / 1024 / 1024)} MB`);
+    }
+
+    const id = randomUUID();
+    await mediaStorage.put(id, data);
+    try {
+      const asset = await mediaRepository.create({
+        id,
+        ownerUserId: userId,
+        storageKey: id,
+        mimeType,
+        sizeBytes: data.length,
+        originalFilename: filename?.slice(0, 255)
+      });
+      return toPublicAsset(asset);
+    } catch (error) {
+      await mediaStorage.delete(id);
+      throw error;
+    }
+  },
+
+  async content(userId: string, id: string) {
+    const asset = await mediaRepository.find(id);
+    if (!asset) throw new AppError(404, 'MEDIA_NOT_FOUND', 'Media not found');
+    if (!(await mediaRepository.isReadableBy(id, userId))) {
+      throw new AppError(404, 'MEDIA_NOT_FOUND', 'Media not found');
+    }
+    return { asset, stream: mediaStorage.read(asset.storageKey) };
+  }
 };

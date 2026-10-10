@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { AuthGuard } from '@/src/features/auth/components/auth-guard';
 import { ConversationSidebar } from '@/src/features/chat/components/conversation-sidebar';
 import { ConversationThread } from '@/src/features/chat/components/conversation-thread';
 import { useChatWorkspace } from '@/src/features/chat/hooks/use-chat-workspace';
-import { NotificationControl } from '@/src/features/notifications/notification-control';
+import { MediaCaptureDialog } from '@/src/features/media/components/media-capture-dialog';
 
 function ChatApp() {
   const chat = useChatWorkspace();
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const report = (action: Promise<unknown>) => {
     void action.catch((error) => {
@@ -35,6 +37,7 @@ function ChatApp() {
           onRequestConnection={chat.requestConnection}
           onRespondConnection={chat.respondConnection}
           onRefreshRequests={chat.loadConnectionRequests}
+          onOpenCamera={() => setCameraOpen(true)}
           onLogout={chat.logout}
         />
         <ConversationThread
@@ -71,15 +74,27 @@ function ChatApp() {
         />
       </main>
 
-      <NotificationControl />
+      <MediaCaptureDialog
+        open={cameraOpen}
+        sending={chat.sending}
+        title="Camera"
+        onClose={() => setCameraOpen(false)}
+        onSend={async (file) => {
+          if (!chat.selectedId) {
+            chat.setError('Open a conversation before sending media.');
+            return;
+          }
+          await chat.send('', [file]);
+        }}
+      />
 
       {chat.error && (
         <div
           role="alert"
-          className="absolute bottom-20 right-4 rounded-xl bg-status-error px-4 py-3 text-sm text-white shadow-lg md:right-6 lg:right-8 2xl:right-10"
+          className="absolute bottom-20 right-4 rounded-xl bg-status-error px-4 py-3 text-sm text-white shadow-lg motion-safe:animate-slide-up md:right-6 lg:right-8 2xl:right-10"
         >
           {chat.error}
-          <button type="button" onClick={() => chat.setError('')} className="ml-3 font-semibold">
+          <button type="button" onClick={() => chat.setError('')} aria-label="Dismiss error" className="ml-3 font-semibold">
             ×
           </button>
         </div>

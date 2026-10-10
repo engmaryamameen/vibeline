@@ -1,26 +1,72 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Message } from '@vibeline/contracts';
+import { Play } from 'lucide-react';
+import { baseMimeType, type MessageAttachment } from '@vibeline/contracts';
 
-type Attachment = Message['attachments'][number];
+type Props = { attachment: MessageAttachment; onLoad: (url: string) => Promise<Blob>; onOpen: () => void };
 
-export function VideoMessage({ attachment, onLoad, onOpen }: { attachment: Attachment; onLoad: (url: string) => Promise<Blob>; onOpen: () => void }) {
-  const [url, setUrl] = useState<string>();
-  const [error, setError] = useState(false);
+const playableType = (blob: Blob, attachment: MessageAttachment) => {
+  if (blob.type.startsWith('video/')) return blob.type;
+  if (attachment.mimeType.startsWith('video/')) return baseMimeType(attachment.mimeType);
+  return 'video/webm';
+};
+
+export function VideoMessage({ attachment, onLoad, onOpen }: Props) {
+  const [source, setSource] = useState<string>();
+  const [failed, setFailed] = useState(false);
+
   useEffect(() => {
-    let cancelled = false;
+    let active = true;
     let objectUrl: string | undefined;
-    setUrl(undefined);
-    setError(false);
-    void onLoad(attachment.url).then(blob => {
-      if (cancelled) return;
-      objectUrl = URL.createObjectURL(new Blob([blob], { type: blob.type.startsWith('video/') ? blob.type : attachment.mimeType.startsWith('video/') ? attachment.mimeType : 'video/webm' }));
-      setUrl(objectUrl);
-    }).catch(() => { if (!cancelled) setError(true); });
-    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [attachment.url, attachment.mimeType, onLoad]);
-  if (error) return <p role="alert" className="text-sm">Video unavailable</p>;
-  if (!url) return <div className="flex h-40 w-64 items-center justify-center rounded-xl bg-black/10 text-sm">Loading video…</div>;
-  return <button type="button" onClick={onOpen} aria-label="Open video in chat" className="relative block overflow-hidden rounded-xl bg-black"><video src={url} muted playsInline preload="metadata" className="max-h-[420px] w-full max-w-[320px]" /><span className="absolute inset-0 flex items-center justify-center bg-black/15 text-4xl text-white" aria-hidden="true">▶</span></button>;
+    setSource(undefined);
+    setFailed(false);
+    void onLoad(attachment.url)
+      .then(async (blob) => {
+        if (!active) return;
+        const type = playableType(blob, attachment);
+        const playable = blob.type === type ? blob : new Blob([await blob.arrayBuffer()], { type });
+        if (!active) return;
+        objectUrl = URL.createObjectURL(playable);
+        setSource(objectUrl);
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [attachment, onLoad]);
+
+  if (failed) {
+    return (
+      <p role="alert" className="flex h-40 w-64 items-center justify-center rounded-xl bg-black/10 text-sm">
+        Video unavailable
+      </p>
+    );
+  }
+
+  if (!source) {
+    return <div className="flex h-40 w-64 animate-pulse items-center justify-center rounded-xl bg-black/10 text-sm text-black/50">Loading video…</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Play ${attachment.originalFilename || 'video'}`}
+      className="group relative block overflow-hidden rounded-xl bg-black"
+    >
+      <video src={source} muted playsInline preload="metadata" className="max-h-[420px] w-full max-w-[320px]" />
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 grid place-items-center bg-black/20 transition-colors group-hover:bg-black/30"
+      >
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-black/55 text-white transition-transform group-hover:scale-105">
+          <Play size={24} fill="currentColor" className="ml-0.5" />
+        </span>
+      </span>
+    </button>
+  );
 }
