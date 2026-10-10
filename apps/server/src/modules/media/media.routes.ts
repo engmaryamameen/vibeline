@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { MEDIA_MAX_UPLOAD_BYTES, MEDIA_UPLOAD_CONTENT_TYPES } from '@vibeline/contracts';
+import { maxBytesForMediaKind, mediaKindFromMimeType, MEDIA_MAX_UPLOAD_BYTES, MEDIA_UPLOAD_CONTENT_TYPES } from '@vibeline/contracts';
 import { rateLimit } from '@/middleware/rate-limit';
 import { validate } from '@/utils/validation';
 import { mediaService } from './media.service';
@@ -17,9 +17,14 @@ const readFilename = (value: unknown) => {
 };
 
 export const mediaRoutes: FastifyPluginAsync = async (app) => {
-  for (const contentType of [...MEDIA_UPLOAD_CONTENT_TYPES, 'application/octet-stream']) {
-    app.addContentTypeParser(contentType, { parseAs: 'buffer', bodyLimit: MEDIA_MAX_UPLOAD_BYTES }, (_request, body, done) => done(null, body));
+  for (const contentType of MEDIA_UPLOAD_CONTENT_TYPES) {
+    const kind = mediaKindFromMimeType(contentType);
+    const bodyLimit = kind ? maxBytesForMediaKind(kind) : MEDIA_MAX_UPLOAD_BYTES;
+    app.addContentTypeParser(contentType, { parseAs: 'buffer', bodyLimit }, (_request, body, done) => done(null, body));
   }
+  app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer', bodyLimit: MEDIA_MAX_UPLOAD_BYTES }, (_request, body, done) =>
+    done(null, body)
+  );
 
   app.addHook('preHandler', app.authenticate);
 

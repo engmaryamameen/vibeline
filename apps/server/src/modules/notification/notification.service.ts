@@ -3,8 +3,14 @@ import type { FastifyBaseLogger } from 'fastify';
 import { env } from '@/config/env';
 import { notificationRepository } from './notification.repository';
 
-type Kind='message'|'connection';
+type Kind='message'|'connection'|'call';
 type Payload={title:string;body:string;url:string;tag:string;conversationId?:string};
+const isKindEnabled=(kind:Kind,prefs:{enabled:boolean;messagesEnabled:boolean;connectionsEnabled:boolean})=>{
+ if(!prefs.enabled)return false;
+ if(kind==='message')return prefs.messagesEnabled;
+ if(kind==='connection')return prefs.connectionsEnabled;
+ return true;
+};
 class NotificationService{
  private logger?:FastifyBaseLogger;
  private configured=Boolean(env.WEB_PUSH_PUBLIC_KEY&&env.WEB_PUSH_PRIVATE_KEY&&env.WEB_PUSH_SUBJECT);
@@ -19,7 +25,7 @@ class NotificationService{
  async updateConversationPreference(userId:string,conversationId:string,muted:boolean){const row=await notificationRepository.updateConversationPreference(userId,conversationId,muted);return row?{muted:row.notificationsMuted}:null;}
  async notify(userId:string,kind:Kind,payload:Payload){
   if(!this.configured)return;
-  try{const prefs=await notificationRepository.getPreferences(userId);if(!prefs.enabled||(kind==='message'&&!prefs.messagesEnabled)||(kind==='connection'&&!prefs.connectionsEnabled))return;if(kind==='message'&&payload.conversationId){const conversation=await notificationRepository.getConversationPreference(userId,payload.conversationId);if(!conversation||conversation.notificationsMuted)return;}const subscriptions=await notificationRepository.listSubscriptions(userId);await Promise.allSettled(subscriptions.map(async sub=>{try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify(payload),{TTL:60*60,urgency:'high'});}catch(error){const status=(error as {statusCode?:number}).statusCode;if(status===404||status===410)await notificationRepository.removeEndpoint(sub.endpoint);else throw error;}}));}
+  try{const prefs=await notificationRepository.getPreferences(userId);if(!isKindEnabled(kind,prefs))return;if((kind==='message'||kind==='call')&&payload.conversationId){const conversation=await notificationRepository.getConversationPreference(userId,payload.conversationId);if(!conversation||conversation.notificationsMuted)return;}const subscriptions=await notificationRepository.listSubscriptions(userId);await Promise.allSettled(subscriptions.map(async sub=>{try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify(payload),{TTL:60*60,urgency:'high'});}catch(error){const status=(error as {statusCode?:number}).statusCode;if(status===404||status===410)await notificationRepository.removeEndpoint(sub.endpoint);else throw error;}}));}
   catch(error){this.logger?.error({error,operation:'push.notify',userId,kind},'push notification delivery failed');}
  }
 }

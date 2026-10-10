@@ -69,7 +69,7 @@ function AuthCallbackContent() {
     let timeout: number | undefined;
 
     void refreshAuthSession()
-      .then(() => router.replace('/'))
+      .then(() => router.replace('/chat'))
       .catch(() => {
         setError('Failed to complete sign-in');
         timeout = window.setTimeout(() => router.replace('/login'), 3000);
