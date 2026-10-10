@@ -9,6 +9,7 @@ import { env } from '@/config/env';
 import { realtimePublisher } from '@/modules/chat/realtime.publisher';
 import { chatService } from '@/modules/chat/chat.service';
 import { assistantService } from '@/modules/assistant/assistant.service';
+import { callService } from '@/modules/call/call.service';
 import { notificationService } from '@/modules/notification/notification.service';
 
 export const buildApp = () => {
@@ -16,9 +17,18 @@ export const buildApp = () => {
   app.register(corsPlugin);
   chatService.setLogger(app.log);
   assistantService.setLogger(app.log);
+  callService.setLogger(app.log);
   notificationService.setLogger(app.log);
-  app.addHook('onReady',async()=>{realtimePublisher.start((conversationId,messageId)=>chatService.getMessageForRealtime(conversationId,messageId),app.log);});
-  app.addHook('onClose',async()=>{await realtimePublisher.stop();});
+  realtimePublisher.registerLoader('message', (messageId, conversationId) => chatService.getMessageForRealtime(conversationId, messageId));
+  realtimePublisher.registerLoader('call-signal', (signalId) => callService.getSignalForRealtime(signalId));
+  app.addHook('onReady', async () => {
+    realtimePublisher.start(app.log);
+    callService.startExpirySweeper();
+  });
+  app.addHook('onClose', async () => {
+    callService.stopExpirySweeper();
+    await realtimePublisher.stop();
+  });
   app.addHook('onRequest', async request => { request.requestStartTime = process.hrtime.bigint(); });
   app.addHook('onResponse', async (request, reply) => {
     const durationMs = request.requestStartTime ? Number(process.hrtime.bigint() - request.requestStartTime) / 1_000_000 : undefined;
