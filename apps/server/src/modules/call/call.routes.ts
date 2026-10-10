@@ -7,6 +7,7 @@ import {
   endCallRequestSchema,
   sendCallSignalRequestSchema
 } from '@vibeline/contracts';
+import { rateLimit } from '@/middleware/rate-limit';
 import { validate } from '@/utils/validation';
 import { callService } from './call.service';
 import { iceService } from './ice.service';
@@ -28,7 +29,7 @@ export const callRoutes: FastifyPluginAsync = async (app) => {
     return { calls: await callService.listHistory(actorId(request), query.conversationId, query.limit) };
   });
 
-  app.post('/', async (request, reply) => {
+  app.post('/', { preHandler: [rateLimit('call-start', 20, 60_000)] }, async (request, reply) => {
     const body = validate(createCallRequestSchema, request.body);
     const call = await callService.start(actorId(request), body.conversationId, body.media);
     return reply.status(201).send({ call });

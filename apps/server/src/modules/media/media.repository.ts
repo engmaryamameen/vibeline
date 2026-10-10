@@ -40,6 +40,7 @@ export const mediaRepository = {
         WHERE ma.media_asset_id = ${assetId}
           AND cm.user_id = ${userId}
           AND cm.left_at IS NULL
+          AND m.deleted_at IS NULL
           AND m.sequence >= cm.joined_sequence
           AND NOT EXISTS (
             SELECT 1 FROM message_user_deletions mud
