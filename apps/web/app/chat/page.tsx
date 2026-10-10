@@ -110,9 +110,10 @@ function ChatApp() {
         sending={stories.publishing}
         sendLabel="Share"
         title="Add to your story"
+        allowCaption
         onClose={stories.closeComposer}
-        onSend={async (file) => {
-          await stories.publish(file, chat.uploadMedia);
+        onSend={async (file, caption) => {
+          await stories.publish(file, chat.uploadMedia, caption);
           stories.closeComposer();
         }}
       />

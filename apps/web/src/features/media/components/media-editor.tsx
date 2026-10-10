@@ -23,9 +23,10 @@ type Props = {
   initialEffect?: EffectName;
   sending: boolean;
   sendLabel?: string;
+  allowCaption?: boolean;
   onRetake: () => void;
   onClose: () => void;
-  onSend: (file: File) => Promise<void>;
+  onSend: (file: File, caption?: string) => Promise<void>;
 };
 
 const TOOLS: Array<{ id: Tool; icon: typeof Type; label: string }> = [
@@ -35,13 +36,14 @@ const TOOLS: Array<{ id: Tool; icon: typeof Type; label: string }> = [
   { id: 'adjust', icon: SlidersHorizontal, label: 'Adjust' }
 ];
 
-export function MediaEditor({ draft, initialEffect = 'Original', sending, sendLabel = 'Send', onRetake, onClose, onSend }: Props) {
+export function MediaEditor({ draft, initialEffect = 'Original', sending, sendLabel = 'Send', allowCaption = false, onRetake, onClose, onSend }: Props) {
   const editor = useMediaEditor();
   const url = useObjectUrl(draft);
   const isVideo = draft.type.startsWith('video/');
   const [tool, setTool] = useState<Tool | null>(null);
   const [cropControls, setCropControls] = useState<CropControls>(DEFAULT_CROP_CONTROLS);
   const [sourceAspect, setSourceAspect] = useState(1);
+  const [caption, setCaption] = useState('');
   const exportState = useMediaExport();
 
   const { setEffect, setCrop, reset } = editor;
@@ -70,7 +72,7 @@ export function MediaEditor({ draft, initialEffect = 'Original', sending, sendLa
   const busy = sending || exportState.busy;
 
   const send = async (file: File) => {
-    await onSend(file);
+    await onSend(file, allowCaption ? caption.trim() || undefined : undefined);
   };
 
   const handleSend = () => {
@@ -165,6 +167,18 @@ export function MediaEditor({ draft, initialEffect = 'Original', sending, sendLa
 
       <footer className="shrink-0 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-3">
         <EffectsRail value={editor.state.effect} disabled={busy} onChange={editor.setEffect} />
+
+        {allowCaption && (
+          <input
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            maxLength={500}
+            disabled={busy}
+            aria-label="Caption"
+            placeholder="Add a caption…"
+            className="mt-3 h-11 w-full rounded-xl bg-white/15 px-3 text-[15px] text-white outline-none placeholder:text-white/45 focus:ring-2 focus:ring-white/40 disabled:opacity-50"
+          />
+        )}
 
         {isVideo && !canExportVideo() && edited && (
           <p role="status" className="mt-2 text-center text-xs text-amber-300">

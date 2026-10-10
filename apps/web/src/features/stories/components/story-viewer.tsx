@@ -41,20 +41,21 @@ export function StoryViewer({ author, stories, loading, error, isSelf, onClose, 
     onViewed(story.id);
   }, [story, isSelf, onViewed]);
 
+  const { next, previous, pause, resume, paused } = playback;
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
-      if (event.key === 'ArrowRight') playback.next();
-      if (event.key === 'ArrowLeft') playback.previous();
+      if (event.key === 'ArrowRight') next();
+      if (event.key === 'ArrowLeft') previous();
       if (event.key === ' ') {
         event.preventDefault();
-        if (playback.paused) playback.resume();
-        else playback.pause();
+        if (paused) resume();
+        else pause();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, playback]);
+  }, [onClose, next, previous, pause, resume, paused]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;

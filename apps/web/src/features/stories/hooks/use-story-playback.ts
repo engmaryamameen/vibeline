@@ -87,14 +87,8 @@ export const useStoryPlayback = ({ count, durationMs, ready, onComplete }: Optio
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
-  return {
-    index,
-    progress,
-    paused,
-    setIndex,
-    next,
-    previous,
-    pause: () => setPaused(true),
-    resume: () => setPaused(false)
-  };
+  const pause = useCallback(() => setPaused(true), []);
+  const resume = useCallback(() => setPaused(false), []);
+
+  return { index, progress, paused, setIndex, next, previous, pause, resume };
 };
