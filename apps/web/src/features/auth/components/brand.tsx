@@ -14,7 +14,7 @@ export function Brand({ light = false }: { light?: boolean }) {
 
       <span
         className={cn(
-          'font-poppins flex items-center text-[26px] font-bold leading-none tracking-[-0.045em]',
+          'flex items-center font-display text-[26px] font-bold leading-none tracking-[-0.045em]',
           light ? 'text-white' : 'text-slate-900'
         )}
       >

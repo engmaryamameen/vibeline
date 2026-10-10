@@ -39,6 +39,7 @@ export const buildApp = () => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'DENY');
     reply.header('Referrer-Policy', 'no-referrer');
+    if (env.NODE_ENV === 'production') reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     if (!reply.getHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
   });
   app.get('/health/live', async () => ({ status: 'ok' }));
