@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { createStoryRequestSchema, storyAuthorParamsSchema, storyParamsSchema } from '@vibeline/contracts';
+import { rateLimit } from '@/middleware/rate-limit';
 import { validate } from '@/utils/validation';
 import { storyService } from './story.service';
 
@@ -10,7 +11,7 @@ export const storyRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/feed', async (request) => ({ groups: await storyService.feed(actorId(request)) }));
 
-  app.post('/', async (request, reply) => {
+  app.post('/', { preHandler: [rateLimit('story-create', 20, 60_000)] }, async (request, reply) => {
     const body = validate(createStoryRequestSchema, request.body);
     const story = await storyService.create(actorId(request), body.mediaAssetId, body.caption, body.durationMs);
     return reply.status(201).send({ story });

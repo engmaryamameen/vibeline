@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CALL_CONNECT_TIMEOUT_MS, type Call, type CallMedia, type CallSignal, type IceServer } from '@vibeline/contracts';
+import { CALL_CONNECT_TIMEOUT_MS, type Call, type CallMedia, type CallSignal, type IceServer, type RealtimeEvent } from '@vibeline/contracts';
 import { useAuthorizedRequest } from '@/src/features/chat/hooks/use-authorized-request';
 import { useRealtimeConnect, useRealtimeEvents } from '@/src/features/realtime/realtime-provider';
 import { useAuthStore } from '@/src/store/auth.store';
@@ -324,7 +324,7 @@ export function useCallSession(): CallSession {
 
   useRealtimeEvents(
     useCallback(
-      (event) => {
+      (event: RealtimeEvent) => {
         if (event.type === 'call.signal') {
           void applySignal(event.payload).catch(() => undefined);
           return;

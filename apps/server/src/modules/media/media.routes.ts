@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { MEDIA_MAX_UPLOAD_BYTES, MEDIA_UPLOAD_CONTENT_TYPES } from '@vibeline/contracts';
+import { rateLimit } from '@/middleware/rate-limit';
 import { validate } from '@/utils/validation';
 import { mediaService } from './media.service';
 
@@ -22,7 +23,7 @@ export const mediaRoutes: FastifyPluginAsync = async (app) => {
 
   app.addHook('preHandler', app.authenticate);
 
-  app.post('/assets', async (request, reply) => {
+  app.post('/assets', { preHandler: [rateLimit('media-upload', 40, 60_000)] }, async (request, reply) => {
     const data = request.body;
     if (!Buffer.isBuffer(data)) {
       return reply.status(400).send({ code: 'UNSUPPORTED_MEDIA', message: 'Media body is required' });
