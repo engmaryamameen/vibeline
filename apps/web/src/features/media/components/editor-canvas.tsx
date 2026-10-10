@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Pause, Play } from 'lucide-react';
 import { useEditorPreview } from '../hooks/use-editor-preview';
 import type { EditState, Overlay } from '../lib/editor-model';
@@ -52,13 +52,12 @@ export function EditorCanvas({ url, isVideo, state, selectedOverlayId, onSourceR
     [onSourceReady]
   );
 
-  const pointerToRelative = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = event.currentTarget;
-    const rect = canvas.getBoundingClientRect();
+  const pointerToRelative = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
     return { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
   };
 
-  const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const { x, y } = pointerToRelative(event);
     const overlay = hitTest(state.overlays, x, y);
     onSelectOverlay(overlay?.id);
@@ -67,7 +66,7 @@ export function EditorCanvas({ url, isVideo, state, selectedOverlayId, onSourceR
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const id = draggingRef.current;
     if (!id) return;
     const { x, y } = pointerToRelative(event);

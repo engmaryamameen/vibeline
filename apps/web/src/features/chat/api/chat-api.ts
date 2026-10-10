@@ -1,17 +1,17 @@
-import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,connectionRequestsResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,messageResponseSchema,messagesResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
-import type { ConversationSummary,Message,MessageReaction,UserSearchResult } from '@vibeline/contracts';
+import { assistantEnableResponseSchema,assistantResponseResponseSchema,assistantStateResponseSchema,connectionRequestsResponseSchema,conversationDetailResponseSchema,conversationResponseSchema,conversationsResponseSchema,mediaAssetResponseSchema,messageResponseSchema,messagesResponseSchema,quickEmojiResponseSchema,reactionsResponseSchema,userSearchResponseSchema } from '@vibeline/contracts';
+import type { ConversationSummary,Message,UserSearchResult } from '@vibeline/contracts';
 export type AuthorizedRequest=<T>(path:string,options?:{method?:'GET'|'POST'|'PUT'|'PATCH'|'DELETE';body?:unknown;rawBody?:BodyInit;headers?:Record<string,string>;responseType?:'json'|'blob';responseSchema?:{parse:(value:unknown)=>T}})=>Promise<T>;
 export const chatApi=(request:AuthorizedRequest)=>({
  listConversations:()=>request('/chat/conversations',{responseSchema:conversationsResponseSchema}),
  getConversation:(id:string)=>request(`/chat/conversations/${id}`,{responseSchema:conversationDetailResponseSchema}),
  listMessages:(id:string,params:{before?:number;after?:number;limit?:number}={})=>{const q=new URLSearchParams();if(params.before!==undefined)q.set('beforeSequence',String(params.before));if(params.after!==undefined)q.set('afterSequence',String(params.after));q.set('limit',String(params.limit??50));return request(`/chat/conversations/${id}/messages?${q}`,{responseSchema:messagesResponseSchema});},
- listReactions:(id:string)=>request<{reactions:MessageReaction[]}>(`/chat/conversations/${id}/reactions`),
- addReaction:(id:string,messageId:string,emoji:string)=>request(`/chat/conversations/${id}/messages/${messageId}/reactions`,{method:'PUT',body:{emoji}}),
+ listReactions:(id:string)=>request(`/chat/conversations/${id}/reactions`,{responseSchema:reactionsResponseSchema}),
+ addReaction:(id:string,messageId:string,emoji:string)=>request<void>(`/chat/conversations/${id}/messages/${messageId}/reactions`,{method:'PUT',body:{emoji}}),
  removeReaction:(id:string,messageId:string,emoji:string)=>request<void>(`/chat/conversations/${id}/messages/${messageId}/reactions`,{method:'DELETE',body:{emoji}}),
- getQuickEmoji:(id:string)=>request<{quickEmoji:string}>(`/chat/conversations/${id}/quick-emoji`),
- setQuickEmoji:(id:string,emoji:string)=>request<{quickEmoji:string}>(`/chat/conversations/${id}/quick-emoji`,{method:'PUT',body:{emoji}}),
+ getQuickEmoji:(id:string)=>request(`/chat/conversations/${id}/quick-emoji`,{responseSchema:quickEmojiResponseSchema}),
+ setQuickEmoji:(id:string,emoji:string)=>request(`/chat/conversations/${id}/quick-emoji`,{method:'PUT',body:{emoji},responseSchema:quickEmojiResponseSchema}),
  loadMedia:(url:string)=>request<Blob>(url,{responseType:'blob'}),
- uploadMedia:(file:File)=>request<{asset:{id:string;url:string;mimeType:string;sizeBytes:number;originalFilename?:string}}>('/media/assets',{method:'POST',rawBody:file,headers:{'content-type':file.type||'application/octet-stream','x-file-name':encodeURIComponent(file.name)}}),
+ uploadMedia:(file:File)=>request('/media/assets',{method:'POST',rawBody:file,headers:{'content-type':file.type||'application/octet-stream','x-file-name':encodeURIComponent(file.name)},responseSchema:mediaAssetResponseSchema}),
  sendMessage:(id:string,body:string,mediaAssetIds:string[]=[],clientMessageId=crypto.randomUUID())=>request(`/chat/conversations/${id}/messages`,{method:'POST',body:{clientMessageId,body,mediaAssetIds},responseSchema:messageResponseSchema}),
  editMessage:(id:string,messageId:string,body:string)=>request(`/chat/conversations/${id}/messages/${messageId}`,{method:'PATCH',body:{body},responseSchema:messageResponseSchema}),
  deleteMessage:(id:string,messageId:string,scope:'me'|'everyone')=>request(`/chat/conversations/${id}/messages/${messageId}?scope=${scope}`,{method:'DELETE',responseSchema:messageResponseSchema}),

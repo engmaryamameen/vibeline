@@ -1,9 +1,14 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Role } from '@vibeline/contracts';
 import '@fastify/jwt';
 
-type AuthenticatedRequest = FastifyRequest;
-
-import type { Role } from '@vibeline/contracts';
+type AuthTokenPayload = {
+  sub: string;
+  email?: string;
+  role: Role;
+  type: 'access' | 'refresh';
+  exp?: number;
+};
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -11,27 +16,14 @@ declare module 'fastify' {
   }
 
   interface FastifyInstance {
-    authenticate: (request: AuthenticatedRequest, reply: FastifyReply) => Promise<void>;
-    authorize: (roles: Role[]) => (request: AuthenticatedRequest, reply: FastifyReply) => Promise<void>;
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorize: (roles: Role[]) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
-
 }
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: {
-      sub: string;
-      email?: string;
-      role: Role;
-      type: 'access' | 'refresh';
-      exp?: number;
-    };
-    user: {
-      sub: string;
-      email?: string;
-      role: Role;
-      type: 'access' | 'refresh';
-      exp?: number;
-    };
+    payload: AuthTokenPayload;
+    user: AuthTokenPayload;
   }
 }
