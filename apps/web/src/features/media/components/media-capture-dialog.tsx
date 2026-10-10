@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { maxBytesForMediaKind, mediaKindFromMimeType } from '@vibeline/contracts';
-import { useBodyScrollLock } from '../hooks/use-body-scroll-lock';
+import { useBodyScrollLock } from '@/src/shared/hooks/use-body-scroll-lock';
 import type { EffectName } from '../lib/editor-model';
 import { CameraView } from './camera-view';
 import { MediaEditor } from './media-editor';

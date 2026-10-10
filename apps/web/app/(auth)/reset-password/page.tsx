@@ -15,7 +15,7 @@ import {
   PasswordToggle,
   authPrimaryClassName,
   SubmitButton
-} from '@/src/features/auth/components/auth-surface';
+} from '@/src/features/auth/components';
 import { cn } from '@vibeline/utils';
 import { useResetPassword } from '@/src/features/auth/hooks/use-reset-password';
 

@@ -1,5 +1,5 @@
 import { storiesResponseSchema, storyFeedResponseSchema, storyResponseSchema, storyViewersResponseSchema } from '@vibeline/contracts';
-import type { AuthorizedRequest } from '@/src/features/chat/api/chat-api';
+import type { AuthorizedRequest } from '@/src/lib/authorized-request';
 
 export const storyApi = (request: AuthorizedRequest) => ({
   feed: () => request('/stories/feed', { responseSchema: storyFeedResponseSchema }),

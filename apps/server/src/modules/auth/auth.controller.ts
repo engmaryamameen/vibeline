@@ -152,7 +152,7 @@ export const googleCallbackHandler = async (
 
     return reply.redirect(`${env.APP_URL}/auth/callback`);
   } catch (err) {
-    request.log.error({ error }, 'Google OAuth callback failed');
+    request.log.error({ err }, 'Google OAuth callback failed');
     return reply.redirect(getOAuthCallbackErrorUrl(err instanceof AppError ? err.code.toLowerCase() : 'oauth_failed'));
   }
 };

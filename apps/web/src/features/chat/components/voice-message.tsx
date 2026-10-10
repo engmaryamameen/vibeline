@@ -5,6 +5,7 @@ import { Mic,Pause,Play,Send,Square,Trash2 } from 'lucide-react';
 import { cn } from '@vibeline/utils';
 import { baseMimeType } from '@vibeline/contracts';
 import type { MessageAttachment } from '@vibeline/contracts';
+import { useMediaBlob } from '@/src/features/media/hooks/use-media-blob';
 import { pickAudioRecordingType } from '@/src/features/media/lib/media-capabilities';
 
 const format=(seconds:number)=>{const safe=Number.isFinite(seconds)&&seconds>0?seconds:0;return `${Math.floor(safe/60)}:${String(Math.floor(safe%60)).padStart(2,'0')}`};
@@ -28,8 +29,7 @@ function VoicePlayer({src,own=false,compact=false}:{src:string;own?:boolean;comp
  return <div className={cn('flex min-w-0 items-center gap-2.5',compact?'w-full':'min-w-[245px] max-w-[330px]')}><button type="button" onClick={toggle} disabled={!src} aria-label={playing?'Pause voice message':'Play voice message'} className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-full transition-transform active:scale-95 disabled:opacity-50',own?'bg-white/20 text-white':'bg-[#0584FE] text-white')}>{playing?<Pause size={18} fill="currentColor"/>:<Play size={18} fill="currentColor" className="ml-0.5"/>}</button><div className="flex min-h-12 min-w-0 flex-1 flex-col justify-center"><div onClick={seek} className="flex h-9 cursor-pointer items-center"><WaveBars bars={bars} progress={progress} own={own}/></div><div className={cn('-mt-0.5 flex items-center justify-between text-[11px] tabular-nums',own?'text-white/75':'text-black/45')}><span>{playing||current>0?format(current):format(duration)}</span>{playing&&<span className="text-[10px]">1×</span>}</div></div><audio ref={audio} data-voice-message src={src} preload="metadata" onLoadedMetadata={e=>syncDuration(e.currentTarget)} onDurationChange={e=>syncDuration(e.currentTarget)} onTimeUpdate={e=>{setCurrent(e.currentTarget.currentTime);syncDuration(e.currentTarget)}} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>{setPlaying(false);setCurrent(0)}}/></div>
 }
 
-const playableAudioType=(blob:Blob,attachment:MessageAttachment)=>{
- if(blob.type.startsWith('audio/'))return blob.type;
+const playableAudioType=(attachment:MessageAttachment)=>{
  if(attachment.mimeType.startsWith('audio/'))return baseMimeType(attachment.mimeType);
  const filename=attachment.originalFilename??'';
  if(/\.(?:ogg|oga|opus)$/i.test(filename))return 'audio/ogg';
@@ -37,11 +37,10 @@ const playableAudioType=(blob:Blob,attachment:MessageAttachment)=>{
  return 'audio/webm';
 };
 
-export function VoiceMessage({attachment,onLoad,own}:{attachment:MessageAttachment;onLoad:(url:string)=>Promise<Blob>;own:boolean}){
- const [src,setSrc]=useState('');const [failed,setFailed]=useState(false);
- useEffect(()=>{let active=true;let url='';setSrc('');setFailed(false);void onLoad(attachment.url).then(async blob=>{if(!active)return;const type=playableAudioType(blob,attachment);const audioBlob=blob.type===type?blob:new Blob([await blob.arrayBuffer()],{type});if(!active)return;url=URL.createObjectURL(audioBlob);setSrc(url)}).catch(()=>{if(active)setFailed(true)});return()=>{active=false;if(url)URL.revokeObjectURL(url)}},[attachment,onLoad]);
+export function VoiceMessage({attachment,own}:{attachment:MessageAttachment;own:boolean}){
+ const {src,failed}=useMediaBlob(attachment.url,playableAudioType(attachment));
  if(failed)return <p role="alert" className={cn('min-w-[200px] text-sm',own?'text-white/85':'text-black/55')}>Voice message unavailable</p>;
- return <VoicePlayer src={src} own={own}/>;
+ return <VoicePlayer src={src??''} own={own}/>;
 }
 
 type RecorderProps={disabled:boolean;onCancel:()=>void;onSend:(file:File)=>Promise<void>};

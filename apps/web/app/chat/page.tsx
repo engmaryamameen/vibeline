@@ -67,7 +67,6 @@ function ChatApp() {
           onBack={() => chat.setSelectedId(null)}
           onLoadOlder={() => report(chat.loadOlder())}
           onSend={chat.send}
-          onLoadMedia={chat.loadMedia}
           onAddReaction={chat.addReaction}
           onRemoveReaction={chat.removeReaction}
           onSetQuickEmoji={chat.setQuickEmoji}
@@ -99,7 +98,6 @@ function ChatApp() {
           error={stories.storiesError}
           isSelf={openStoryGroup.isSelf}
           onClose={stories.close}
-          onLoadMedia={chat.loadMedia}
           onViewed={stories.markViewed}
           onDelete={stories.remove}
         />

@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import type { CallMedia } from '@vibeline/contracts';
 import { CallHistoryList } from '@/src/features/calls/components/call-history-list';
 import { useCallHistory } from '@/src/features/calls/hooks/use-call-history';
-import { useAuthorizedRequest } from '../hooks/use-authorized-request';
+import { useAuthorizedRequest } from '@/src/lib/authorized-request';
 import { cn } from '@vibeline/utils';
 import { chatIcons } from '@/src/shared/assets/svg/chat';
 import { ChatAvatar } from './chat-avatar';

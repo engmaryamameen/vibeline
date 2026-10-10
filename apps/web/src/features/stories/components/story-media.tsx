@@ -1,53 +1,31 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { isVideoMedia, type Story } from '@vibeline/contracts';
+import { useMediaBlob } from '@/src/features/media/hooks/use-media-blob';
 
 type Props = {
   story: Story;
   paused: boolean;
-  onLoad: (url: string) => Promise<Blob>;
   onReady: (durationMs: number) => void;
   onFailed: () => void;
 };
 
-export function StoryMedia({ story, paused, onLoad, onReady, onFailed }: Props) {
-  const [source, setSource] = useState<string>();
-  const [failed, setFailed] = useState(false);
+export function StoryMedia({ story, paused, onReady, onFailed }: Props) {
+  const { src, failed } = useMediaBlob(story.url, story.mimeType);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isVideo = isVideoMedia(story.mimeType);
 
   useEffect(() => {
-    let active = true;
-    let objectUrl: string | undefined;
-    setSource(undefined);
-    setFailed(false);
-    void onLoad(story.url)
-      .then(async (blob) => {
-        if (!active) return;
-        const type = blob.type && blob.type !== 'application/octet-stream' ? blob.type : story.mimeType;
-        const playable = blob.type === type ? blob : new Blob([await blob.arrayBuffer()], { type });
-        if (!active) return;
-        objectUrl = URL.createObjectURL(playable);
-        setSource(objectUrl);
-      })
-      .catch(() => {
-        if (!active) return;
-        setFailed(true);
-        onFailed();
-      });
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [story.url, story.mimeType, onLoad, onFailed]);
+    if (failed) onFailed();
+  }, [failed, onFailed]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !source) return;
+    if (!video || !src) return;
     if (paused) video.pause();
     else void video.play().catch(() => undefined);
-  }, [paused, source]);
+  }, [paused, src]);
 
   if (failed) {
     return (
@@ -57,39 +35,26 @@ export function StoryMedia({ story, paused, onLoad, onReady, onFailed }: Props) 
     );
   }
 
-  if (!source) return <p className="text-sm text-white/60">Loading story…</p>;
+  if (!src) return <p className="text-sm text-white/60">Loading story…</p>;
 
   if (isVideo) {
     return (
       <video
         ref={videoRef}
-        src={source}
+        src={src}
         playsInline
         autoPlay
         className="max-h-full max-w-full object-contain"
         onLoadedMetadata={(event) => {
           const duration = event.currentTarget.duration;
-          if (Number.isFinite(duration) && duration > 0) onReady(Math.round(duration * 1000));
-          else onReady(story.durationMs);
+          onReady(Number.isFinite(duration) && duration > 0 ? Math.round(duration * 1000) : story.durationMs);
         }}
-        onError={() => {
-          setFailed(true);
-          onFailed();
-        }}
+        onError={onFailed}
       />
     );
   }
 
   return (
-    <img
-      src={source}
-      alt={story.caption || 'Story'}
-      className="max-h-full max-w-full object-contain"
-      onLoad={() => onReady(story.durationMs)}
-      onError={() => {
-        setFailed(true);
-        onFailed();
-      }}
-    />
+    <img src={src} alt={story.caption || 'Story'} className="max-h-full max-w-full object-contain" onLoad={() => onReady(story.durationMs)} onError={onFailed} />
   );
 }

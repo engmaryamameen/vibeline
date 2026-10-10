@@ -13,7 +13,7 @@ import {
   PasswordToggle,
   SocialAuth,
   SubmitButton
-} from '@/src/features/auth/components/auth-surface';
+} from '@/src/features/auth/components';
 import { useLogin } from '@/src/features/auth/hooks/use-login';
 import { env } from '@/src/lib/env';
 
