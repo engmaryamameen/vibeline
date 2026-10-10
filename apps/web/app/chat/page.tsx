@@ -9,11 +9,16 @@ import { ConversationThread } from '@/src/features/chat/components/conversation-
 import { useChatWorkspace } from '@/src/features/chat/hooks/use-chat-workspace';
 import { MediaCaptureDialog } from '@/src/features/media/components/media-capture-dialog';
 import { RealtimeProvider } from '@/src/features/realtime/realtime-provider';
+import { StoryViewer } from '@/src/features/stories/components/story-viewer';
+import { useStories } from '@/src/features/stories/hooks/use-stories';
 
 function ChatApp() {
   const chat = useChatWorkspace();
   const call = useCallSession();
+  const stories = useStories();
   const [cameraOpen, setCameraOpen] = useState(false);
+
+  const openStoryGroup = stories.groups.find((group) => group.author.userId === stories.openAuthorId);
 
   const report = (action: Promise<unknown>) => {
     void action.catch((error) => {
@@ -43,6 +48,7 @@ function ChatApp() {
           onRefreshRequests={chat.loadConnectionRequests}
           onOpenCamera={() => setCameraOpen(true)}
           onLogout={chat.logout}
+          stories={stories}
         />
         <ConversationThread
           className="col-span-4 md:col-span-5 lg:col-span-9"
@@ -84,6 +90,32 @@ function ChatApp() {
       </main>
 
       <CallOverlay session={call} />
+
+      {openStoryGroup && (
+        <StoryViewer
+          author={openStoryGroup.author}
+          stories={stories.stories}
+          loading={stories.storiesLoading}
+          error={stories.storiesError}
+          isSelf={openStoryGroup.isSelf}
+          onClose={stories.close}
+          onLoadMedia={chat.loadMedia}
+          onViewed={stories.markViewed}
+          onDelete={stories.remove}
+        />
+      )}
+
+      <MediaCaptureDialog
+        open={stories.composerOpen}
+        sending={stories.publishing}
+        sendLabel="Share"
+        title="Add to your story"
+        onClose={stories.closeComposer}
+        onSend={async (file) => {
+          await stories.publish(file, chat.uploadMedia);
+          stories.closeComposer();
+        }}
+      />
 
       <MediaCaptureDialog
         open={cameraOpen}

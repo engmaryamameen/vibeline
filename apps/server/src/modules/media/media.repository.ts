@@ -45,6 +45,20 @@ export const mediaRepository = {
             SELECT 1 FROM message_user_deletions mud
             WHERE mud.message_id = m.id AND mud.user_id = ${userId}
           )
+      ) OR EXISTS (
+        SELECT 1
+        FROM stories s
+        WHERE s.media_asset_id = ${assetId}
+          AND s.deleted_at IS NULL
+          AND s.expires_at > now()
+          AND EXISTS (
+            SELECT 1 FROM connection_requests cr
+            WHERE cr.status = 'accepted'
+              AND (
+                (cr.requester_id = ${userId} AND cr.addressee_id = s.author_user_id)
+                OR (cr.addressee_id = ${userId} AND cr.requester_id = s.author_user_id)
+              )
+          )
       ) AS readable
     `);
     return Boolean((result.rows[0] as { readable?: boolean } | undefined)?.readable);
