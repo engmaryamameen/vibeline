@@ -7,12 +7,12 @@ import { pool } from '@/db/client';
 
 type Listener = (event: ChatEvent) => void;
 type PayloadRef = { kind: string; id: string };
-type PayloadLoader = (id: string, conversationId: string) => Promise<unknown | undefined>;
+type PayloadLoader = (id: string, conversationId: string | undefined) => Promise<unknown | undefined>;
 type Envelope = {
   origin: string;
   memberIds: string[];
   type: ChatEventType;
-  conversationId: string;
+  conversationId?: string;
   ref?: PayloadRef;
   payload?: unknown;
 };
@@ -53,7 +53,11 @@ const consume = async (raw: string) => {
     payload = await loader(envelope.ref.id, envelope.conversationId);
   }
   if (payload === undefined) return;
-  deliver(envelope.memberIds, { type: envelope.type, conversationId: envelope.conversationId, payload });
+  deliver(envelope.memberIds, {
+    type: envelope.type,
+    ...(envelope.conversationId ? { conversationId: envelope.conversationId } : {}),
+    payload
+  });
 };
 
 const connect = async () => {
@@ -119,7 +123,7 @@ export const realtimePublisher = {
       origin: INSTANCE_ID,
       memberIds: ids,
       type: event.type,
-      conversationId: event.conversationId,
+      ...(event.conversationId ? { conversationId: event.conversationId } : {}),
       ...(ref ? { ref } : { payload: event.payload })
     };
     await pool.query('SELECT pg_notify($1,$2)', [CHANNEL, JSON.stringify(envelope)]);

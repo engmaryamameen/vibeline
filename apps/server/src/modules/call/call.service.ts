@@ -217,7 +217,7 @@ class CallService {
   private async notifyIncoming(callerId: string, calleeId: string, conversationId: string, media: CallMedia) {
     try {
       const caller = await userRepository.findById(callerId);
-      await notificationService.notify(calleeId, 'message', {
+      await notificationService.notify(calleeId, 'call', {
         title: caller?.displayName ?? 'Vibeline',
         body: media === 'video' ? 'Incoming video call' : 'Incoming audio call',
         url: `/chat?conversation=${conversationId}`,
@@ -232,7 +232,7 @@ class CallService {
   private async notifyMissed(callerId: string, calleeId: string, conversationId: string) {
     try {
       const caller = await userRepository.findById(callerId);
-      await notificationService.notify(calleeId, 'message', {
+      await notificationService.notify(calleeId, 'call', {
         title: caller?.displayName ?? 'Vibeline',
         body: 'Missed call',
         url: `/chat?conversation=${conversationId}`,

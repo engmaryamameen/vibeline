@@ -113,7 +113,12 @@ class ChatService {
 
   async updateReceipt(userId:string,conversationId:string,deliveredSequence:number,readSequence:number){const receipt=await chatRepository.updateReceipt(conversationId,userId,deliveredSequence,readSequence);if(!receipt)throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');const ids=(await chatRepository.listMessageRecipientIds(conversationId,2_147_483_647)).map(x=>x.userId);void realtimePublisher.publish(ids,{type:'receipt.updated',conversationId,payload:{userId,deliveredSequence:receipt.deliveredSequence,readSequence:receipt.readSequence}}).catch(()=>undefined);return receipt;}
 
-  async touchPresence(userId:string){const presence=await chatRepository.touchPresence(userId);const peers=(await chatRepository.listConversationPeerIds(userId)).map(x=>x.userId);for(const conversation of await chatRepository.listConversations(userId))void realtimePublisher.publish(peers,{type:'presence.updated',conversationId:conversation.id,payload:{userId,lastSeenAt:presence!.lastSeenAt.toISOString()}}).catch(()=>undefined);return presence;}
+  async touchPresence(userId:string){
+    const presence=await chatRepository.touchPresence(userId);
+    const peers=(await chatRepository.listConversationPeerIds(userId)).map(row=>row.userId);
+    if(peers.length)void realtimePublisher.publish(peers,{type:'presence.updated',payload:{userId,lastSeenAt:presence.lastSeenAt.toISOString()}}).catch(error=>this.logger?.error({error,operation:'chat.realtime.presence',actorId:userId},'presence publish failed'));
+    return presence;
+  }
 
   async publishPersistedMessage(conversationId:string,message:PersistedMessage){await this.publish(conversationId,'message.created',toMessage(message));}
 
