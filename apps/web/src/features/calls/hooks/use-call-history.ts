@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Call } from '@vibeline/contracts';
-import { useAuthorizedRequest } from '@/src/features/chat/hooks/use-authorized-request';
+import { useAuthorizedRequest } from '@/src/lib/authorized-request';
 import { callApi } from '../api/call-api';
 
 export const useCallHistory = (conversationId: string | undefined, enabled: boolean) => {

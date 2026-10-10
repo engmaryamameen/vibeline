@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { rateLimit } from '@/middleware/rate-limit';
+import { oauthService } from '@/services/oauth.service';
 
 import {
   forgotPasswordHandler,
@@ -17,6 +18,7 @@ import {
 } from './auth.controller';
 
 export const authRoutes: FastifyPluginAsync = async (app) => {
+  app.get('/providers', async () => ({ providers: { google: oauthService.isGoogleConfigured() } }));
   app.post('/register', registerHandler);
   app.post('/login', { preHandler: [rateLimit('login', 10, 60_000)] }, loginHandler);
   app.post('/verify-email', verifyEmailHandler);

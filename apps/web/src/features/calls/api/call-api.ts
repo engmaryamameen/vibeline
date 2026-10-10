@@ -7,7 +7,7 @@ import {
   type CallMedia,
   type SendCallSignalRequest
 } from '@vibeline/contracts';
-import type { AuthorizedRequest } from '@/src/features/chat/api/chat-api';
+import type { AuthorizedRequest } from '@/src/lib/authorized-request';
 
 export const callApi = (request: AuthorizedRequest) => ({
   iceServers: () => request('/calls/ice-servers', { responseSchema: iceServersResponseSchema }),

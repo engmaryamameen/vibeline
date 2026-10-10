@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { AuthField, AuthFields, AuthForm, AuthHeader, AuthNotice, AuthPage, SubmitButton, authPrimaryClassName } from '@/src/features/auth/components/auth-surface';
+import { AuthField, AuthFields, AuthForm, AuthHeader, AuthNotice, AuthPage, SubmitButton, authPrimaryClassName } from '@/src/features/auth/components';
 import { cn } from '@vibeline/utils';
 import { useForgotPassword } from '@/src/features/auth/hooks/use-forgot-password';
 

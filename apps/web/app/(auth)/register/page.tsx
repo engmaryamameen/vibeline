@@ -14,7 +14,7 @@ import {
   PasswordToggle,
   SocialAuth,
   SubmitButton
-} from '@/src/features/auth/components/auth-surface';
+} from '@/src/features/auth/components';
 import { useRegister } from '@/src/features/auth/hooks/use-register';
 import { env } from '@/src/lib/env';
 

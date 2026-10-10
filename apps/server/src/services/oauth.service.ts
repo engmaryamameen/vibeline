@@ -43,8 +43,12 @@ type GoogleUserInfo = {
 
 
 class OAuthService {
+  isGoogleConfigured() {
+    return Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_CALLBACK_URL);
+  }
+
   getGoogleAuthUrl(state?: string): string {
-    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CALLBACK_URL) {
+    if (!this.isGoogleConfigured()) {
       throw new Error('Google OAuth is not configured');
     }
 

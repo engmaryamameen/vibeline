@@ -1,67 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { baseMimeType, isVideoMedia, type MessageAttachment } from '@vibeline/contracts';
+import { useEffect } from 'react';
+import { isVideoMedia, type MessageAttachment } from '@vibeline/contracts';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useMediaBlob } from '@/src/features/media/hooks/use-media-blob';
+import { useBodyScrollLock } from '@/src/shared/hooks/use-body-scroll-lock';
 
 type Props = {
   attachments: MessageAttachment[];
   selectedId: string | null;
   onClose: () => void;
   onSelect: (id: string) => void;
-  onLoad: (url: string) => Promise<Blob>;
 };
 
-export function ChatMediaViewer({ attachments, selectedId, onClose, onSelect, onLoad }: Props) {
+export function ChatMediaViewer({ attachments, selectedId, onClose, onSelect }: Props) {
   const index = attachments.findIndex((item) => item.id === selectedId);
   const current = index >= 0 ? attachments[index] : undefined;
-  const [source, setSource] = useState<string>();
-  const [failed, setFailed] = useState(false);
+  const { src, failed } = useMediaBlob(current?.url, current?.mimeType);
 
-  const currentId = current?.id;
-  const currentUrl = current?.url;
-  const currentMimeType = current?.mimeType;
+  useBodyScrollLock(Boolean(current));
 
-  useEffect(() => {
-    if (!currentUrl || !currentMimeType) return;
-    let active = true;
-    let objectUrl: string | undefined;
-    setSource(undefined);
-    setFailed(false);
-    void onLoad(currentUrl)
-      .then(async (blob) => {
-        if (!active) return;
-        const declared = baseMimeType(currentMimeType);
-        const type = blob.type && blob.type !== 'application/octet-stream' ? blob.type : declared;
-        const playable = blob.type === type ? blob : new Blob([await blob.arrayBuffer()], { type });
-        if (!active) return;
-        objectUrl = URL.createObjectURL(playable);
-        setSource(objectUrl);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      });
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [currentId, currentUrl, currentMimeType, onLoad]);
+  const previous = index > 0 ? attachments[index - 1] : undefined;
+  const next = index < attachments.length - 1 ? attachments[index + 1] : undefined;
 
   useEffect(() => {
-    if (!currentId) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!current) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
-      if (event.key === 'ArrowLeft' && index > 0) onSelect(attachments[index - 1]!.id);
-      if (event.key === 'ArrowRight' && index < attachments.length - 1) onSelect(attachments[index + 1]!.id);
+      if (event.key === 'ArrowLeft' && previous) onSelect(previous.id);
+      if (event.key === 'ArrowRight' && next) onSelect(next.id);
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [currentId, index, attachments, onClose, onSelect]);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [current, previous, next, onClose, onSelect]);
 
   if (!current) return null;
 
@@ -97,28 +68,28 @@ export function ChatMediaViewer({ attachments, selectedId, onClose, onSelect, on
       >
         {failed ? (
           <p role="alert">Unable to load this media.</p>
-        ) : !source ? (
+        ) : !src ? (
           <p className="text-white/70">Loading media…</p>
         ) : isVideo ? (
-          <video key={current.id} src={source} controls autoPlay playsInline className="max-h-full max-w-full rounded-lg object-contain" />
+          <video key={current.id} src={src} controls autoPlay playsInline className="max-h-full max-w-full rounded-lg object-contain" />
         ) : (
-          <img src={source} alt={current.originalFilename || 'Chat image'} className="max-h-full max-w-full select-none object-contain" />
+          <img src={src} alt={current.originalFilename || 'Chat image'} className="max-h-full max-w-full select-none object-contain" />
         )}
 
-        {index > 0 && (
+        {previous && (
           <button
             type="button"
-            onClick={() => onSelect(attachments[index - 1]!.id)}
+            onClick={() => onSelect(previous.id)}
             aria-label="Previous media"
             className="absolute left-2 rounded-full bg-white/15 p-2 transition-colors hover:bg-white/25 sm:left-5"
           >
             <ChevronLeft size={24} />
           </button>
         )}
-        {index < attachments.length - 1 && (
+        {next && (
           <button
             type="button"
-            onClick={() => onSelect(attachments[index + 1]!.id)}
+            onClick={() => onSelect(next.id)}
             aria-label="Next media"
             className="absolute right-2 rounded-full bg-white/15 p-2 transition-colors hover:bg-white/25 sm:right-5"
           >

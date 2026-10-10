@@ -5,7 +5,7 @@ import { ArrowRight, MessageCircleMore, ShieldCheck, Sparkles } from 'lucide-rea
 
 import { Button, PageShell } from '@vibeline/ui';
 import { AuthGuard } from '@/src/features/auth/components/auth-guard';
-import { Brand } from '@/src/features/auth/components/auth-surface';
+import { Brand } from '@/src/features/auth/components';
 import { env } from '@/src/lib/env';
 
 export default function HomePage() {

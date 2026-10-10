@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CALL_CONNECT_TIMEOUT_MS, type Call, type CallMedia, type CallSignal, type IceServer, type RealtimeEvent } from '@vibeline/contracts';
-import { useAuthorizedRequest } from '@/src/features/chat/hooks/use-authorized-request';
+import { useAuthorizedRequest } from '@/src/lib/authorized-request';
 import { useRealtimeConnect, useRealtimeEvents } from '@/src/features/realtime/realtime-provider';
 import { useAuthStore } from '@/src/store/auth.store';
 import { callApi } from '../api/call-api';

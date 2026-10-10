@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const authProvidersSchema = z.object({ google: z.boolean() });
+export type AuthProviders = z.infer<typeof authProvidersSchema>;
+export const authProvidersResponseSchema = z.object({ providers: authProvidersSchema });
+
 export const roleSchema = z.enum(['user', 'admin']);
 export type Role = z.infer<typeof roleSchema>;
 
