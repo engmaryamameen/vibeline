@@ -29,8 +29,7 @@ export const buildApp = () => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'DENY');
     reply.header('Referrer-Policy', 'no-referrer');
-    reply.header('Cache-Control', 'no-store');
-    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (!reply.getHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
   });
   app.get('/health/live', async () => ({ status: 'ok' }));
   app.get('/health/ready', async (_request, reply) => {
