@@ -134,7 +134,7 @@ class ChatService {
   private async publishReaction(conversationId:string,messageId:string){try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,2_147_483_647)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type:'message.reaction',conversationId,payload:{messageId}});}catch(error){this.logger?.error({error,operation:'chat.realtime.reaction',conversationId,messageId},'reaction realtime publish failed');}}
 
   private async publish(conversationId:string,type:ChatEventType,payload:Message){
-    try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,payload.sequence)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type,conversationId,payload});}
+    try{const memberIds=(await chatRepository.listMessageRecipientIds(conversationId,payload.sequence)).map(member=>member.userId);await realtimePublisher.publish(memberIds,{type,conversationId,payload},{kind:'message',id:payload.id});}
     catch(error){this.logger?.error({error,operation:'chat.realtime.publish',conversationId,messageId:payload?.id},'realtime publish failed; committed state remains authoritative');}
   }
 }

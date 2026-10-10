@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { AuthGuard } from '@/src/features/auth/components/auth-guard';
+import { CallOverlay } from '@/src/features/calls/components/call-overlay';
+import { useCallSession } from '@/src/features/calls/hooks/use-call-session';
 import { ConversationSidebar } from '@/src/features/chat/components/conversation-sidebar';
 import { ConversationThread } from '@/src/features/chat/components/conversation-thread';
 import { useChatWorkspace } from '@/src/features/chat/hooks/use-chat-workspace';
 import { MediaCaptureDialog } from '@/src/features/media/components/media-capture-dialog';
+import { RealtimeProvider } from '@/src/features/realtime/realtime-provider';
 
 function ChatApp() {
   const chat = useChatWorkspace();
+  const call = useCallSession();
   const [cameraOpen, setCameraOpen] = useState(false);
 
   const report = (action: Promise<unknown>) => {
@@ -71,8 +75,15 @@ function ChatApp() {
           onEnableAssistant={chat.enableAssistant}
           onRequestAssistant={chat.requestAssistant}
           onAddMember={chat.addMember}
+          callsSupported={call.supported}
+          callBusy={call.phase !== 'idle'}
+          onStartCall={(media) => {
+            if (chat.selectedId) void call.start(chat.selectedId, media);
+          }}
         />
       </main>
+
+      <CallOverlay session={call} />
 
       <MediaCaptureDialog
         open={cameraOpen}
@@ -106,7 +117,9 @@ function ChatApp() {
 export default function ChatPage() {
   return (
     <AuthGuard mode="protected">
-      <ChatApp />
+      <RealtimeProvider>
+        <ChatApp />
+      </RealtimeProvider>
     </AuthGuard>
   );
 }

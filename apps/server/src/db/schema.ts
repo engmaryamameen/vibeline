@@ -1,5 +1,5 @@
-import { boolean, check, date, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { bigserial, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { desc, sql } from 'drizzle-orm';
 
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
@@ -263,6 +263,64 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
 }, (table) => [
   uniqueIndex('push_subscriptions_endpoint_uq').on(table.endpoint),
   index('push_subscriptions_user_idx').on(table.userId)
+]);
+
+export const callMedia = pgEnum('call_media', ['audio', 'video']);
+export const callStatus = pgEnum('call_status', ['ringing', 'accepted', 'connected', 'ended']);
+export const callEndReason = pgEnum('call_end_reason', ['completed', 'rejected', 'canceled', 'missed', 'failed', 'busy']);
+export const callParticipantRole = pgEnum('call_participant_role', ['caller', 'callee']);
+export const callSignalKind = pgEnum('call_signal_kind', ['offer', 'answer', 'candidate']);
+
+export const calls = pgTable('calls', {
+  id: text('id').primaryKey(),
+  conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  callerId: text('caller_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  calleeId: text('callee_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  media: callMedia('media').notNull(),
+  status: callStatus('status').notNull().default('ringing'),
+  endReason: callEndReason('end_reason'),
+  endedByUserId: text('ended_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  ringExpiresAt: timestamp('ring_expires_at', { withTimezone: true }).notNull(),
+  heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  connectedAt: timestamp('connected_at', { withTimezone: true }),
+  endedAt: timestamp('ended_at', { withTimezone: true })
+}, (table) => [
+  index('calls_conversation_created_idx').on(table.conversationId, desc(table.createdAt)),
+  index('calls_caller_created_idx').on(table.callerId, desc(table.createdAt)),
+  index('calls_callee_created_idx').on(table.calleeId, desc(table.createdAt)),
+  index('calls_ringing_expiry_idx').on(table.ringExpiresAt).where(sql`${table.status} = 'ringing'`),
+  index('calls_heartbeat_idx').on(table.heartbeatAt).where(sql`${table.status} IN ('accepted','connected')`),
+  check('calls_distinct_parties_ck', sql`${table.callerId} <> ${table.calleeId}`),
+  check('calls_terminal_shape_ck', sql`(${table.status} = 'ended') = (${table.endedAt} IS NOT NULL)`),
+  check('calls_end_reason_shape_ck', sql`(${table.status} = 'ended') = (${table.endReason} IS NOT NULL)`)
+]);
+
+export const callParticipants = pgTable('call_participants', {
+  callId: text('call_id').notNull().references(() => calls.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: callParticipantRole('role').notNull(),
+  active: boolean('active').notNull().default(true),
+  joinedAt: timestamp('joined_at', { withTimezone: true }),
+  leftAt: timestamp('left_at', { withTimezone: true })
+}, (table) => [
+  uniqueIndex('call_participants_pk').on(table.callId, table.userId),
+  uniqueIndex('call_participants_single_active_uq').on(table.userId).where(sql`${table.active}`),
+  index('call_participants_call_idx').on(table.callId)
+]);
+
+export const callSignals = pgTable('call_signals', {
+  id: text('id').primaryKey(),
+  callId: text('call_id').notNull().references(() => calls.id, { onDelete: 'cascade' }),
+  senderId: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientId: text('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  kind: callSignalKind('kind').notNull(),
+  payload: jsonb('payload').notNull(),
+  sequence: bigserial('sequence', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  index('call_signals_delivery_idx').on(table.callId, table.recipientId, table.sequence)
 ]);
 
 export const notificationPreferences = pgTable('notification_preferences', {
