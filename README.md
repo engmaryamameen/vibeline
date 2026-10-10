@@ -157,5 +157,15 @@ when it sits behind a proxy you control.
   `public/` holds only `images/vibeline-bird-logo.svg`, which the push service
   worker references by URL and therefore cannot be an import.
 
-More detail: `docs/architecture.md`, `docs/calling-architecture.md`,
-`docs/media-architecture.md`, `docs/stories-architecture.md`.
+## Documentation
+
+Current: `docs/api.md` (full route surface), `docs/architecture.md`,
+`docs/media-architecture.md`, `docs/calling-architecture.md`,
+`docs/stories-architecture.md`, `docs/chat-scalability.md`,
+`docs/production-architecture.md`, `docs/production-operations.md`.
+
+Historical records of earlier decisions, kept for context rather than as a
+description of the current code: `docs/phase1-decisions.md`,
+`docs/phase2-architecture.md`, `docs/engineering-review.md`,
+`docs/production-readiness.md`, `docs/verification.md`, `docs/ui-layout.md`,
+`docs/assistant-architecture.md`.
