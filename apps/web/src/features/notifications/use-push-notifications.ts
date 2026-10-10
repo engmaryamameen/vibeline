@@ -1,6 +1,6 @@
 'use client';
 import { useCallback,useEffect,useState } from 'react';
-import { useAuthorizedRequest } from '@/src/features/chat/hooks/use-authorized-request';
+import { useAuthorizedRequest } from '@/src/lib/authorized-request';
 const decode=(value:string)=>{const padded=value+'='.repeat((4-value.length%4)%4);const raw=atob(padded.replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));};
 export function usePushNotifications(){
  const request=useAuthorizedRequest();const [supported,setSupported]=useState(false);const [permission,setPermission]=useState<NotificationPermission>('default');const [enabled,setEnabled]=useState(false);

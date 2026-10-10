@@ -16,12 +16,11 @@ type Props = {
   error: string;
   isSelf: boolean;
   onClose: () => void;
-  onLoadMedia: (url: string) => Promise<Blob>;
   onViewed: (storyId: string) => void;
   onDelete: (storyId: string) => Promise<void>;
 };
 
-export function StoryViewer({ author, stories, loading, error, isSelf, onClose, onLoadMedia, onViewed, onDelete }: Props) {
+export function StoryViewer({ author, stories, loading, error, isSelf, onClose, onViewed, onDelete }: Props) {
   const [durationMs, setDurationMs] = useState(5_000);
   const [mediaReady, setMediaReady] = useState(false);
   const [viewersOpen, setViewersOpen] = useState(false);
@@ -133,7 +132,7 @@ export function StoryViewer({ author, stories, loading, error, isSelf, onClose, 
         ) : !story ? (
           <p className="px-8 text-center text-sm text-white/75">These stories are no longer available.</p>
         ) : (
-          <StoryMedia story={story} paused={playback.paused || viewersOpen} onLoad={onLoadMedia} onReady={onMediaReady} onFailed={onMediaFailed} />
+          <StoryMedia story={story} paused={playback.paused || viewersOpen} onReady={onMediaReady} onFailed={onMediaFailed} />
         )}
 
         {story && (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { CheckCircle2, Loader2, Mail, XCircle } from 'lucide-react';
 
 import { Button, Input } from '@vibeline/ui';
-import { AuthPage, AuthStatePanel } from '@/src/features/auth/components/auth-surface';
+import { AuthPage, AuthStatePanel } from '@/src/features/auth/components';
 import { useVerifyEmail } from '@/src/features/auth/hooks/use-verify-email';
 
 function VerifyEmailContent() {
