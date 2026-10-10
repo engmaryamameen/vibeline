@@ -131,13 +131,6 @@ class StoryRepository {
       .returning();
     return row;
   }
-
-  listAuthorIdsForViewer(viewerId: string) {
-    return db
-      .selectDistinct({ authorUserId: stories.authorUserId })
-      .from(stories)
-      .where(and(live(), visibleTo(viewerId)));
-  }
 }
 
 export const storyRepository = new StoryRepository();

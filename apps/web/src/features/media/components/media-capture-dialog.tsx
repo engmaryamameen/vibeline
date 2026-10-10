@@ -12,10 +12,11 @@ type Props = {
   sending: boolean;
   allowVideo?: boolean;
   allowLibrary?: boolean;
+  allowCaption?: boolean;
   sendLabel?: string;
   title?: string;
   onClose: () => void;
-  onSend: (file: File) => Promise<void>;
+  onSend: (file: File, caption?: string) => Promise<void>;
 };
 
 const describeRejection = (file: File) => {
@@ -31,6 +32,7 @@ export function MediaCaptureDialog({
   sending,
   allowVideo = true,
   allowLibrary = true,
+  allowCaption = false,
   sendLabel,
   title = 'Camera',
   onClose,
@@ -99,10 +101,11 @@ export function MediaCaptureDialog({
           initialEffect={draftEffect}
           sending={sending}
           sendLabel={sendLabel}
+          allowCaption={allowCaption}
           onRetake={() => setDraft(null)}
           onClose={onClose}
-          onSend={async (file) => {
-            await onSend(file);
+          onSend={async (file, caption) => {
+            await onSend(file, caption);
             setDraft(null);
             onClose();
           }}
