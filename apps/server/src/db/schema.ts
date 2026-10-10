@@ -265,6 +265,32 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   index('push_subscriptions_user_idx').on(table.userId)
 ]);
 
+export const stories = pgTable('stories', {
+  id: text('id').primaryKey(),
+  authorUserId: text('author_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  mediaAssetId: text('media_asset_id').notNull().references(() => mediaAssets.id, { onDelete: 'restrict' }),
+  caption: text('caption'),
+  durationMs: integer('duration_ms').notNull().default(5_000),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true })
+}, (table) => [
+  uniqueIndex('stories_media_asset_uq').on(table.mediaAssetId),
+  index('stories_author_created_idx').on(table.authorUserId, desc(table.createdAt)),
+  index('stories_live_idx').on(table.expiresAt).where(sql`${table.deletedAt} IS NULL`),
+  check('stories_expiry_ck', sql`${table.expiresAt} > ${table.createdAt}`),
+  check('stories_duration_ck', sql`${table.durationMs} BETWEEN 1000 AND 60000`)
+]);
+
+export const storyViews = pgTable('story_views', {
+  storyId: text('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  viewerUserId: text('viewer_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  viewedAt: timestamp('viewed_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('story_views_pk').on(table.storyId, table.viewerUserId),
+  index('story_views_viewer_idx').on(table.viewerUserId, table.storyId)
+]);
+
 export const callMedia = pgEnum('call_media', ['audio', 'video']);
 export const callStatus = pgEnum('call_status', ['ringing', 'accepted', 'connected', 'ended']);
 export const callEndReason = pgEnum('call_end_reason', ['completed', 'rejected', 'canceled', 'missed', 'failed', 'busy']);
