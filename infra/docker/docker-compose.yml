@@ -17,12 +17,16 @@ services:
       dockerfile: infra/docker/server.Dockerfile
     env_file:
       - ../../.env
+    environment:
+      MEDIA_STORAGE_DIR: /data/media
     ports:
       - '5001:5001'
+    volumes:
+      - vibeline-media:/data/media
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped 
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
@@ -43,3 +47,4 @@ services:
 
 volumes:
   vibeline-postgres:
+  vibeline-media:
