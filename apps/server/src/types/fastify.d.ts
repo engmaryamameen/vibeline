@@ -1,4 +1,4 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import type { Role } from '@vibeline/contracts';
 import '@fastify/jwt';
 

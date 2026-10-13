@@ -48,13 +48,14 @@ class OAuthService {
   }
 
   getGoogleAuthUrl(state?: string): string {
-    if (!this.isGoogleConfigured()) {
+    const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret, GOOGLE_CALLBACK_URL: callbackUrl } = env;
+    if (!clientId || !clientSecret || !callbackUrl) {
       throw new Error('Google OAuth is not configured');
     }
 
     const params = new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      redirect_uri: env.GOOGLE_CALLBACK_URL,
+      client_id: clientId,
+      redirect_uri: callbackUrl,
       response_type: 'code',
       scope: 'openid email profile',
       access_type: 'offline',
