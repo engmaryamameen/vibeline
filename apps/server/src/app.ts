@@ -19,7 +19,7 @@ export const buildApp = () => {
   assistantService.setLogger(app.log);
   callService.setLogger(app.log);
   notificationService.setLogger(app.log);
-  realtimePublisher.registerLoader('message', (messageId, conversationId) => chatService.getMessageForRealtime(conversationId, messageId));
+  realtimePublisher.registerLoader('message', (messageId, conversationId) => conversationId ? chatService.getMessageForRealtime(conversationId, messageId) : Promise.resolve(undefined));
   realtimePublisher.registerLoader('call-signal', (signalId) => callService.getSignalForRealtime(signalId));
   app.addHook('onReady', async () => {
     realtimePublisher.start(app.log);
