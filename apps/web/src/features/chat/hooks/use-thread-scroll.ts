@@ -22,8 +22,8 @@ export const useThreadScroll = ({ conversationId, latestMessageId, latestIsOwn, 
   const viewport = useRef<HTMLDivElement | null>(null);
   const nearBottom = useRef(true);
   const heightBeforeOlder = useRef<number | null>(null);
-  const lastSeenLatestId = useRef<string>();
-  const lastConversationId = useRef<string>();
+  const lastSeenLatestId = useRef<string | undefined>(undefined);
+  const lastConversationId = useRef<string | undefined>(undefined);
 
   const viewportRef = useCallback((node: HTMLDivElement | null) => {
     viewport.current = node;
