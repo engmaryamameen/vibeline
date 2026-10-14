@@ -9,9 +9,9 @@ import { useFocusTrap } from '@/src/shared/hooks/use-focus-trap';
 
 const EXIT_MS = 160;
 
-type Props = { open: boolean; title: string; onClose: () => void; children: ReactNode };
+type Props = { open: boolean; title: string; onClose: () => void; children: ReactNode; size?: 'default' | 'wide' };
 
-export function ChatDialog({ open, title, onClose, children }: Props) {
+export function ChatDialog({ open, title, onClose, children, size = 'default' }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(false);
@@ -50,7 +50,8 @@ export function ChatDialog({ open, title, onClose, children }: Props) {
         aria-modal="true"
         aria-label={title}
         className={cn(
-          'relative max-h-[86dvh] w-full overflow-hidden rounded-t-[24px] bg-surface-panel shadow-2xl transition duration-150 ease-out sm:max-w-md sm:rounded-[20px]',
+          'relative max-h-[86dvh] w-full overflow-hidden rounded-t-[24px] bg-surface-panel shadow-2xl transition duration-150 ease-out sm:rounded-[20px]',
+          size === 'wide' ? 'sm:max-w-[680px]' : 'sm:max-w-md',
           'motion-reduce:transition-none',
           visible ? 'translate-y-0 opacity-100 sm:scale-100' : 'translate-y-4 opacity-0 sm:translate-y-0 sm:scale-[.97]'
         )}
