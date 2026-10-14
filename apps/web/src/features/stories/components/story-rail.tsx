@@ -72,7 +72,7 @@ export function StoryRail({ groups, loading, error, onOpen, onCreate }: Props) {
         ))}
 
         {loading && !groups.length && <p className="self-center px-2 text-[13px] text-black/35">Loading stories…</p>}
-        {!loading && !others.length && !own && <p className="self-center px-2 text-[13px] text-black/35">No stories from your connections yet.</p>}
+        {!loading && !others.length && !own && <p className="self-center px-2 text-[13px] text-black/35"></p>}
       </div>
     </section>
   );
