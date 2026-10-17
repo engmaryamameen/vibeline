@@ -1,126 +1,84 @@
-import { randomBytes, randomUUID } from 'node:crypto';
-
-import type { Role, User } from '@vibeline/types';
-
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
+import type {
+  AddPasswordRequest,
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  User,
+  VerifyEmailRequest
+} from '@vibeline/contracts';
 import { AppError } from '@/common/errors/app-error';
 import { logger } from '@/config/logger';
-import { userRepository, type StoredUser } from '@/repositories/user.repository';
+import { env } from '@/config/env';
+import { userRepository, toPublicUser } from '@/repositories/user.repository';
+import { authIdentityRepository } from '@/repositories/auth-identity.repository';
 import { emailService } from '@/services/email.service';
-import { comparePassword, hashPassword } from '@/utils/hash';
-import { signTokens, verifyRefreshToken } from '@/utils/jwt';
+import { comparePassword, hashPassword, passwordHashNeedsUpgrade } from '@/utils/hash';
+import { signAccessToken } from '@/utils/jwt';
+import { sessionService } from './session.service';
 
-import type {
-  ForgotPasswordRequestDto,
-  LoginRequestDto,
-  RegisterRequestDto,
-  ResetPasswordRequestDto,
-  VerifyEmailRequestDto
-} from './auth.dto';
-
-const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
-const PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 1;
-
-const generateVerificationToken = (): string => {
-  return randomBytes(32).toString('hex');
-};
-
-const generateVerificationCode = (): string => {
-  const n = randomBytes(4).readUInt32BE(0) % 1_000_000;
-  return n.toString().padStart(6, '0');
-};
-
-const getVerificationTokenExpiry = (): string => {
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + VERIFICATION_TOKEN_EXPIRY_HOURS);
-  return expiry.toISOString();
-};
-
-const generatePasswordResetToken = (): string => {
-  return randomBytes(32).toString('hex');
-};
-
-const generatePasswordResetCode = (): string => {
-  const n = randomBytes(4).readUInt32BE(0) % 1_000_000;
-  return n.toString().padStart(6, '0');
-};
-
-const getPasswordResetTokenExpiry = (): string => {
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + PASSWORD_RESET_TOKEN_EXPIRY_HOURS);
-  return expiry.toISOString();
-};
+const credentialDigest = (value: string) => createHmac('sha256', env.AUTH_CREDENTIAL_SECRET).update(value).digest('hex');
+const token = () => randomBytes(32).toString('hex');
+const code = () => (randomBytes(4).readUInt32BE(0) % 1_000_000).toString().padStart(6, '0');
+const expiry = (hours: number) => new Date(Date.now() + hours * 60 * 60 * 1000);
+const isUniqueViolation = (error: unknown): error is { code: '23505' } =>
+  typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === '23505';
 
 class AuthService {
-  private toUser(stored: StoredUser): User {
+  private tokens(user: User, refreshToken: string) {
     return {
-      id: stored.id,
-      email: stored.email,
-      displayName: stored.displayName,
-      avatarUrl: stored.avatarUrl ?? undefined,
-      role: stored.role as User['role'],
-      emailVerified: stored.emailVerified,
-      createdAt:
-        stored.createdAt instanceof Date ? stored.createdAt.toISOString() : String(stored.createdAt)
+      accessToken: signAccessToken({ id: user.id, email: user.email, role: user.role }),
+      refreshToken
     };
   }
 
-  async register(payload: RegisterRequestDto) {
-    const existing = await userRepository.findByEmail(payload.email);
-
-    if (existing) {
+  async register(payload: RegisterRequest) {
+    if (await userRepository.findByEmail(payload.email)) {
       throw new AppError(409, 'EMAIL_IN_USE', 'Email is already registered');
     }
 
-    const now = new Date().toISOString();
-    const verificationToken = generateVerificationToken();
-    const verificationCode = generateVerificationCode();
-    const verificationTokenExpiresAt = getVerificationTokenExpiry();
+    const verificationToken = token();
+    const verificationCode = code();
+    const userId = randomUUID();
+    const displayName = `${payload.firstName} ${payload.lastName}`.trim();
 
-    const user: User = {
-      id: randomUUID(),
-      email: payload.email,
-      displayName: payload.displayName,
-      role: 'user',
-      emailVerified: false,
-      createdAt: now
-    };
-
-    const passwordHash = await hashPassword(payload.password);
-    const createdUser = await userRepository.create({
-      ...user,
-      passwordHash,
-      verificationToken,
-      verificationCode,
-      verificationTokenExpiresAt
-    });
-
-    emailService
-      .sendVerificationEmail(payload.email, verificationToken, verificationCode, payload.displayName)
-      .catch((error) => {
-        logger.error({ error, email: payload.email }, 'Failed to send verification email');
+    try {
+      const row = await authIdentityRepository.createPasswordAccount({
+        userId,
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        dateOfBirth: payload.dateOfBirth,
+        displayName,
+        passwordHash: await hashPassword(payload.password),
+        verificationToken: credentialDigest(verificationToken),
+        verificationCode: credentialDigest(verificationCode),
+        verificationTokenExpiresAt: expiry(24)
       });
 
-    return {
-      user: createdUser,
-      tokens: signTokens({
-        id: createdUser.id,
-        email: createdUser.email,
-        role: createdUser.role as Role
-      }),
-      message: 'Registration successful. Please check your email to verify your account.'
-    };
+      emailService
+        .sendVerificationEmail(payload.email, verificationToken, verificationCode, payload.firstName)
+        .catch((error) => logger.error({ err: error, userId }, 'Failed to send verification email'));
+
+      return {
+        user: toPublicUser(row),
+        message: 'Registration successful. Please check your email to verify your account.'
+      };
+    } catch (error: unknown) {
+      if (isUniqueViolation(error)) {
+        throw new AppError(409, 'EMAIL_IN_USE', 'Email is already registered');
+      }
+      throw error;
+    }
   }
 
-  async login(payload: LoginRequestDto) {
+  async login(payload: LoginRequest) {
     const existing = await userRepository.findByEmail(payload.email);
+    const credential = existing ? await authIdentityRepository.findPasswordCredential(existing.id) : null;
 
-    if (!existing) {
-      throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid');
-    }
-
-    const matched = await comparePassword(payload.password, existing.passwordHash);
-
-    if (!matched) {
+    if (!existing || !credential || !(await comparePassword(payload.password, credential.passwordHash))) {
       throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid');
     }
 
@@ -128,16 +86,12 @@ class AuthService {
       throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email address before logging in');
     }
 
-    const user = this.toUser(existing);
+    if (passwordHashNeedsUpgrade(credential.passwordHash)) {
+      await authIdentityRepository.updatePassword(existing.id, await hashPassword(payload.password));
+    }
 
-    return {
-      user,
-      tokens: signTokens({
-        id: user.id,
-        email: user.email,
-        role: user.role
-      })
-    };
+    const user = toPublicUser(existing);
+    return { user, tokens: this.tokens(user, await sessionService.create(user.id)) };
   }
 
   async refreshSession(refreshToken: string) {
@@ -145,152 +99,140 @@ class AuthService {
       throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is missing');
     }
 
-    const { userId } = verifyRefreshToken(refreshToken);
-    const existing = await userRepository.findById(userId);
+    const rotated = await sessionService.rotate(refreshToken);
+    const existing = await userRepository.findById(rotated.userId);
 
-    if (!existing) {
-      throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid');
+    if (!existing || !existing.emailVerified) {
+      if (existing) await sessionService.revokeAll(existing.id);
+      throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh session is invalid');
     }
 
-    if (!existing.emailVerified) {
-      throw new AppError(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email address before logging in');
-    }
-
-    const user = this.toUser(existing);
-
-    return {
-      user,
-      tokens: signTokens({
-        id: user.id,
-        email: user.email,
-        role: user.role
-      })
-    };
+    const user = toPublicUser(existing);
+    return { user, tokens: this.tokens(user, rotated.refreshToken) };
   }
 
-  async verifyEmail(payload: VerifyEmailRequestDto) {
-    let user = null;
-    if (payload.code) {
-      user = await userRepository.findByVerificationCode(payload.code);
-    } else if (payload.token) {
-      user = await userRepository.findByVerificationToken(payload.token);
+  async logout(refreshToken: string) {
+    if (refreshToken) await sessionService.revoke(refreshToken);
+  }
+
+  async addPassword(userId: string, payload: AddPasswordRequest) {
+    if (await authIdentityRepository.findPasswordCredential(userId)) {
+      throw new AppError(409, 'PASSWORD_ALREADY_CONFIGURED', 'Password authentication is already configured');
     }
+
+    try {
+      await authIdentityRepository.createPasswordCredential(userId, await hashPassword(payload.password));
+    } catch (error: unknown) {
+      if (isUniqueViolation(error)) {
+        throw new AppError(409, 'PASSWORD_ALREADY_CONFIGURED', 'Password authentication is already configured');
+      }
+      throw error;
+    }
+
+    return { message: 'Password authentication added.' };
+  }
+
+  async changePassword(userId: string, payload: ChangePasswordRequest) {
+    const credential = await authIdentityRepository.findPasswordCredential(userId);
+
+    if (!credential || !(await comparePassword(payload.currentPassword, credential.passwordHash))) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Current password is invalid');
+    }
+
+    await authIdentityRepository.updatePassword(userId, await hashPassword(payload.newPassword));
+    await sessionService.revokeAll(userId);
+    return { message: 'Password changed. Please sign in again.' };
+  }
+
+  async verifyEmail(payload: VerifyEmailRequest) {
+    const digest = credentialDigest(payload.code ?? payload.token ?? '');
+    const user = payload.code
+      ? await userRepository.findByVerificationCode(digest)
+      : await userRepository.findByVerificationToken(digest);
+
     if (!user) {
       throw new AppError(400, 'INVALID_TOKEN', 'Verification token is invalid or has expired');
     }
 
-    if (user.verificationTokenExpiresAt) {
-      const expiresAt = new Date(user.verificationTokenExpiresAt);
-      if (expiresAt < new Date()) {
-        throw new AppError(400, 'TOKEN_EXPIRED', 'Verification token has expired. Please request a new one.');
-      }
+    if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < new Date()) {
+      throw new AppError(400, 'TOKEN_EXPIRED', 'Verification token has expired. Please request a new one.');
     }
 
-    const verifiedUser = await userRepository.setEmailVerified(user.id);
-
-    if (!verifiedUser) {
+    const verified = await userRepository.setEmailVerified(user.id);
+    if (!verified) {
       throw new AppError(500, 'VERIFICATION_FAILED', 'Failed to verify email. Please try again.');
     }
 
-    logger.info({ userId: user.id, email: user.email }, 'Email verified successfully');
-
     return {
-      user: verifiedUser,
-      tokens: signTokens({
-        id: verifiedUser.id,
-        email: verifiedUser.email,
-        role: verifiedUser.role as Role
-      }),
+      user: verified,
+      tokens: this.tokens(verified, await sessionService.create(verified.id)),
       message: 'Email verified successfully. You can now access your account.'
     };
   }
 
   async resendVerificationEmail(email: string) {
     const user = await userRepository.findByEmail(email);
+    if (!user) return { message: 'If this email exists, a verification link will be sent.' };
+    if (user.emailVerified) throw new AppError(400, 'ALREADY_VERIFIED', 'Email is already verified');
 
-    if (!user) {
-      return { message: 'If this email exists, a verification link will be sent.' };
-    }
-
-    if (user.emailVerified) {
-      throw new AppError(400, 'ALREADY_VERIFIED', 'Email is already verified');
-    }
-
-    const verificationToken = generateVerificationToken();
-    const verificationCode = generateVerificationCode();
-    const verificationTokenExpiresAt = getVerificationTokenExpiry();
-
+    const verificationToken = token();
+    const verificationCode = code();
     await userRepository.update(user.id, {
-      verificationToken,
-      verificationCode,
-      verificationTokenExpiresAt
+      verificationToken: credentialDigest(verificationToken),
+      verificationCode: credentialDigest(verificationCode),
+      verificationTokenExpiresAt: expiry(24)
     });
 
-    await emailService.sendVerificationEmail(email, verificationToken, verificationCode, user.displayName);
+    await emailService.sendVerificationEmail(
+      email,
+      verificationToken,
+      verificationCode,
+      user.firstName ?? user.displayName
+    );
 
     return { message: 'If this email exists, a verification link will be sent.' };
   }
 
-  async forgotPassword(payload: ForgotPasswordRequestDto) {
+  async forgotPassword(payload: ForgotPasswordRequest) {
+    const message = 'If an account with that email exists, a password reset link will be sent.';
     const user = await userRepository.findByEmail(payload.email);
+    if (!user) return { message };
 
-    // Always return success message to prevent email enumeration
-    const successMessage = 'If an account with that email exists, a password reset link will be sent.';
+    const credential = await authIdentityRepository.findPasswordCredential(user.id);
+    if (!credential) return { message };
 
-    if (!user) {
-      return { message: successMessage };
-    }
-
-    const passwordResetToken = generatePasswordResetToken();
-    const passwordResetCode = generatePasswordResetCode();
-    const passwordResetTokenExpiresAt = getPasswordResetTokenExpiry();
-
-    await userRepository.update(user.id, {
-      passwordResetToken,
-      passwordResetCode,
-      passwordResetTokenExpiresAt
+    const resetToken = token();
+    const resetCode = code();
+    await authIdentityRepository.setPasswordReset(user.id, {
+      token: credentialDigest(resetToken),
+      code: credentialDigest(resetCode),
+      expiresAt: expiry(1)
     });
 
     emailService
-      .sendPasswordResetEmail(payload.email, passwordResetToken, passwordResetCode, user.displayName)
-      .catch((error) => {
-        logger.error({ error, email: payload.email }, 'Failed to send password reset email');
-      });
+      .sendPasswordResetEmail(payload.email, resetToken, resetCode, user.firstName ?? user.displayName)
+      .catch((error) => logger.error({ err: error, userId: user.id }, 'Failed to send password reset email'));
 
-    logger.info({ userId: user.id, email: user.email }, 'Password reset email requested');
-
-    return { message: successMessage };
+    return { message };
   }
 
-  async resetPassword(payload: ResetPasswordRequestDto) {
-    let user = null;
-    if (payload.code) {
-      user = await userRepository.findByPasswordResetCode(payload.code);
-    } else if (payload.token) {
-      user = await userRepository.findByPasswordResetToken(payload.token);
-    }
+  async resetPassword(payload: ResetPasswordRequest) {
+    const digest = credentialDigest(payload.code ?? payload.token ?? '');
+    const credential = payload.code
+      ? await authIdentityRepository.findByPasswordResetCode(digest)
+      : await authIdentityRepository.findByPasswordResetToken(digest);
 
-    if (!user) {
+    if (!credential) {
       throw new AppError(400, 'INVALID_TOKEN', 'Password reset token or code is invalid or has expired');
     }
 
-    if (user.passwordResetTokenExpiresAt) {
-      const expiresAt = new Date(user.passwordResetTokenExpiresAt);
-      if (expiresAt < new Date()) {
-        throw new AppError(400, 'TOKEN_EXPIRED', 'Password reset token has expired. Please request a new one.');
-      }
+    if (credential.passwordResetTokenExpiresAt && credential.passwordResetTokenExpiresAt < new Date()) {
+      throw new AppError(400, 'TOKEN_EXPIRED', 'Password reset token has expired. Please request a new one.');
     }
 
-    const passwordHash = await hashPassword(payload.password);
-
-    await userRepository.update(user.id, {
-      passwordHash,
-      passwordResetToken: undefined,
-      passwordResetCode: undefined,
-      passwordResetTokenExpiresAt: undefined
-    });
-
-    logger.info({ userId: user.id, email: user.email }, 'Password reset successfully');
+    await authIdentityRepository.updatePassword(credential.userId, await hashPassword(payload.password));
+    await authIdentityRepository.setPasswordReset(credential.userId, { token: null, code: null, expiresAt: null });
+    await sessionService.revokeAll(credential.userId);
 
     return { message: 'Your password has been reset successfully. You can now log in with your new password.' };
   }

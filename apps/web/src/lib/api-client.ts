@@ -1,46 +1,58 @@
+import { apiErrorResponseSchema } from '@vibeline/contracts';
 import { env } from './env';
 
-type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export class ApiError extends Error {
-  status: number;
-  code?: string;
-
-  constructor(status: number, message: string, code?: string) {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly code?: string
+  ) {
     super(message);
     this.name = 'ApiError';
-    this.status = status;
-    this.code = code;
   }
 }
 
-export const apiClient = async <TResponse>(
-  path: string,
-  options?: {
-    method?: HttpMethod;
-    body?: unknown;
-    token?: string;
-  }
-): Promise<TResponse> => {
+type ResponseSchema<T> = { parse: (value: unknown) => T };
+
+export type RequestOptions<T> = {
+  method?: HttpMethod;
+  body?: unknown;
+  rawBody?: BodyInit;
+  headers?: Record<string, string>;
+  token?: string;
+  responseSchema?: ResponseSchema<T>;
+  responseType?: 'json' | 'blob';
+  cache?: RequestCache;
+  signal?: AbortSignal;
+};
+
+export async function apiClient<T = unknown>(path: string, options: RequestOptions<T> = {}): Promise<T> {
+  const hasBody = options.body !== undefined;
+
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    method: options?.method ?? 'GET',
+    method: options.method ?? 'GET',
     headers: {
-      'content-type': 'application/json',
-      ...(options?.token ? { authorization: `Bearer ${options.token}` } : {})
+      ...(hasBody ? { 'content-type': 'application/json' } : {}),
+      ...options.headers,
+      ...(options.token ? { authorization: `Bearer ${options.token}` } : {})
     },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
+    body: options.rawBody ?? (hasBody ? JSON.stringify(options.body) : undefined),
     credentials: 'include',
-    cache: 'no-store'
+    cache: options.cache ?? 'no-store',
+    ...(options.signal ? { signal: options.signal } : {})
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new ApiError(response.status, payload.message ?? 'Request failed', payload.code);
+    const raw = await response.json().catch(() => null);
+    const parsed = apiErrorResponseSchema.safeParse(raw);
+    throw new ApiError(response.status, parsed.success ? parsed.data.message : 'Request failed', parsed.success ? parsed.data.code : undefined);
   }
 
-  if (response.status === 204) {
-    return undefined as TResponse;
-  }
+  if (response.status === 204) return undefined as T;
+  if (options.responseType === 'blob') return (await response.blob()) as T;
 
-  return response.json() as Promise<TResponse>;
-};
+  const payload: unknown = await response.json();
+  return options.responseSchema ? options.responseSchema.parse(payload) : (payload as T);
+}

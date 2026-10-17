@@ -5,7 +5,7 @@
 - `apps/web`: Next.js client for authentication UX and protected entry page
 - `apps/server`: Fastify API for auth, session, and profile bootstrap
 - `packages/ui`: reusable UI primitives shared by web
-- `packages/types`: shared auth-centric contracts (`User`, `Role`, `AuthTokens`)
+- `packages/contracts`: shared auth-centric contracts (`User`, `Role`, `AuthTokens`)
 - `packages/utils`: low-level helpers (`cn`)
 - `packages/config`: shared TS/ESLint/Prettier configs
 
@@ -32,7 +32,7 @@ This keeps HTTP concerns out of business logic and keeps persistence isolated fo
 - Login with verified email requirement
 - Email verification via token or 6-digit code
 - Password reset via token or 6-digit code
-- OAuth initiation + callback handling for Google and GitHub
+- OAuth initiation + callback handling for Google
 
 ## Operational model
 

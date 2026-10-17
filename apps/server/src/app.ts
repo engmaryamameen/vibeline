@@ -1,26 +1,53 @@
 import Fastify from 'fastify';
-
 import { loggerConfig } from '@/config/logger';
+import { checkDatabase } from '@/db/client';
 import { registerErrorHandler } from '@/middleware/error.middleware';
 import authPlugin from '@/plugins/auth.plugin';
 import corsPlugin from '@/plugins/cors.plugin';
 import { registerRoutes } from '@/routes';
+import { env } from '@/config/env';
+import { realtimePublisher } from '@/modules/chat/realtime.publisher';
+import { chatService } from '@/modules/chat/chat.service';
+import { assistantService } from '@/modules/assistant/assistant.service';
+import { callService } from '@/modules/call/call.service';
+import { notificationService } from '@/modules/notification/notification.service';
 
 export const buildApp = () => {
-  const app = Fastify({
-    logger: loggerConfig
-  });
-
+  const app = Fastify({ logger: loggerConfig, bodyLimit: 64 * 1024, requestIdHeader: 'x-request-id', trustProxy: env.TRUST_PROXY });
   app.register(corsPlugin);
+  chatService.setLogger(app.log);
+  assistantService.setLogger(app.log);
+  callService.setLogger(app.log);
+  notificationService.setLogger(app.log);
+  realtimePublisher.registerLoader('message', (messageId, conversationId) => conversationId ? chatService.getMessageForRealtime(conversationId, messageId) : Promise.resolve(undefined));
+  realtimePublisher.registerLoader('call-signal', (signalId) => callService.getSignalForRealtime(signalId));
+  app.addHook('onReady', async () => {
+    realtimePublisher.start(app.log);
+    callService.startExpirySweeper();
+  });
+  app.addHook('onClose', async () => {
+    callService.stopExpirySweeper();
+    await realtimePublisher.stop();
+  });
+  app.addHook('onRequest', async request => { request.requestStartTime = process.hrtime.bigint(); });
+  app.addHook('onResponse', async (request, reply) => {
+    const durationMs = request.requestStartTime ? Number(process.hrtime.bigint() - request.requestStartTime) / 1_000_000 : undefined;
+    request.log.info({ operation: `${request.method} ${request.routeOptions.url}`, statusCode: reply.statusCode, durationMs, actorId: request.user?.sub }, 'request completed');
+  });
   app.register(authPlugin);
-
-  app.get('/health', async () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  }));
-
+  app.addHook('onSend', async (_request, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Referrer-Policy', 'no-referrer');
+    if (env.NODE_ENV === 'production') reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    if (!reply.getHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
+  });
+  app.get('/health/live', async () => ({ status: 'ok' }));
+  app.get('/health/ready', async (_request, reply) => {
+    try { await checkDatabase(); return { status: 'ready' }; }
+    catch { return reply.status(503).send({ status: 'not_ready' }); }
+  });
   registerRoutes(app);
   registerErrorHandler(app);
-
   return app;
 };

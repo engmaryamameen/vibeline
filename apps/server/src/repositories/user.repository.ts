@@ -1,179 +1,119 @@
-import type { User } from '@vibeline/types';
-import { eq } from 'drizzle-orm';
-
+import { randomUUID } from 'node:crypto';
+import type { User } from '@vibeline/contracts';
+import { and, asc, desc, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { users } from '@/db/schema';
+import { connectionRequests, userPresence, users } from '@/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
-export type StoredUser = {
-  id: string;
-  email: string;
-  displayName: string;
-  avatarUrl: string | null;
-  role: string;
-  emailVerified: boolean;
-  passwordHash: string;
-  verificationToken?: string | null;
-  verificationCode?: string | null;
-  verificationTokenExpiresAt?: string | null;
-  passwordResetToken?: string | null;
-  passwordResetCode?: string | null;
-  passwordResetTokenExpiresAt?: string | null;
-  createdAt: Date | string;
-};
+export type StoredUser = InferSelectModel<typeof users>;
 
-const toStoredUser = (row: InferSelectModel<typeof users>): StoredUser => ({
-  ...row,
-  avatarUrl: row.avatarUrl ?? null,
-  verificationToken: row.verificationToken ?? undefined,
-  verificationTokenExpiresAt:
-    row.verificationTokenExpiresAt != null
-      ? (row.verificationTokenExpiresAt instanceof Date
-          ? row.verificationTokenExpiresAt.toISOString()
-          : String(row.verificationTokenExpiresAt))
-      : undefined,
-  passwordResetToken: row.passwordResetToken ?? undefined,
-  passwordResetCode: row.passwordResetCode ?? undefined,
-  passwordResetTokenExpiresAt:
-    row.passwordResetTokenExpiresAt != null
-      ? (row.passwordResetTokenExpiresAt instanceof Date
-          ? row.passwordResetTokenExpiresAt.toISOString()
-          : String(row.passwordResetTokenExpiresAt))
-      : undefined
+export const toPublicUser = (row: StoredUser): User => ({
+  id: row.id,
+  email: row.email,
+  displayName: row.displayName,
+  firstName: row.firstName ?? undefined,
+  lastName: row.lastName ?? undefined,
+  dateOfBirth: row.dateOfBirth ?? undefined,
+  phoneNumber: row.phoneNumber,
+  avatarUrl: row.avatarUrl ?? undefined,
+  role: row.role as User['role'],
+  emailVerified: row.emailVerified,
+  createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt)
 });
 
-const toPublicUser = (stored: StoredUser): User => {
-  const {
-    passwordHash: _,
-    verificationToken: __,
-    verificationTokenExpiresAt: ___,
-    passwordResetToken: ____,
-    passwordResetCode: _____,
-    passwordResetTokenExpiresAt: ______,
-    ...user
-  } = stored;
-  return {
-    ...user,
-    avatarUrl: user.avatarUrl ?? undefined,
-    role: user.role as User['role'],
-    emailVerified: user.emailVerified ?? false,
-    createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt)
-  };
-};
-
 class UserRepository {
-  async findByEmail(email: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({ where: eq(users.email, email) });
-    return row ? toStoredUser(row) : null;
+  findByEmail(email: string) {
+    return db.query.users.findFirst({ where: ilike(users.email, email) }).then((row) => row ?? null);
   }
 
-  async findById(id: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({ where: eq(users.id, id) });
-    return row ? toStoredUser(row) : null;
+  findById(id: string) {
+    return db.query.users.findFirst({ where: eq(users.id, id) }).then((row) => row ?? null);
   }
 
-  async findByVerificationToken(token: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({
-      where: eq(users.verificationToken, token)
-    });
-    return row ? toStoredUser(row) : null;
+  findByVerificationToken(token: string) {
+    return db.query.users.findFirst({ where: eq(users.verificationToken, token) }).then((row) => row ?? null);
   }
 
-  async findByVerificationCode(code: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({
-      where: eq(users.verificationCode, code)
-    });
-    return row ? toStoredUser(row) : null;
+  findByVerificationCode(code: string) {
+    return db.query.users.findFirst({ where: eq(users.verificationCode, code) }).then((row) => row ?? null);
   }
 
-  async findByPasswordResetToken(token: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({
-      where: eq(users.passwordResetToken, token)
-    });
-    return row ? toStoredUser(row) : null;
-  }
-
-  async findByPasswordResetCode(code: string): Promise<StoredUser | null> {
-    const row = await db.query.users.findFirst({
-      where: eq(users.passwordResetCode, code)
-    });
-    return row ? toStoredUser(row) : null;
-  }
-
-  async create(
-    payload: Omit<StoredUser, 'createdAt' | 'avatarUrl'> & {
-      createdAt?: string;
-      avatarUrl?: string | null;
-    }
-  ): Promise<User> {
-    const [row] = await db
-      .insert(users)
-      .values({
-        id: payload.id,
-        email: payload.email,
-        displayName: payload.displayName,
-        avatarUrl: payload.avatarUrl ?? null,
-        role: payload.role,
-        emailVerified: payload.emailVerified ?? false,
-        passwordHash: payload.passwordHash,
-        verificationToken: payload.verificationToken ?? null,
-        verificationCode: payload.verificationCode ?? null,
-        verificationTokenExpiresAt: payload.verificationTokenExpiresAt
-          ? new Date(payload.verificationTokenExpiresAt)
-          : null,
-        passwordResetToken: payload.passwordResetToken ?? null,
-        passwordResetCode: payload.passwordResetCode ?? null,
-        passwordResetTokenExpiresAt: payload.passwordResetTokenExpiresAt
-          ? new Date(payload.passwordResetTokenExpiresAt)
-          : null
-      })
-      .returning();
-
+  async create(payload: Omit<StoredUser, 'createdAt'> & { createdAt?: Date }) {
+    const [row] = await db.insert(users).values(payload).returning();
     if (!row) throw new Error('Failed to create user');
-    return toPublicUser(toStoredUser(row));
+    return toPublicUser(row);
   }
 
   async update(id: string, updates: Partial<StoredUser>): Promise<User | null> {
-    const payload: Record<string, unknown> = {};
-
-    if (updates.email !== undefined) payload.email = updates.email;
-    if (updates.displayName !== undefined) payload.displayName = updates.displayName;
-    if (updates.avatarUrl !== undefined) payload.avatarUrl = updates.avatarUrl;
-    if (updates.role !== undefined) payload.role = updates.role;
-    if (updates.emailVerified !== undefined) payload.emailVerified = updates.emailVerified;
-    if (updates.passwordHash !== undefined) payload.passwordHash = updates.passwordHash;
-    if ('verificationToken' in updates)
-      payload.verificationToken = updates.verificationToken ?? null;
-    if ('verificationCode' in updates)
-      payload.verificationCode = updates.verificationCode ?? null;
-    if ('verificationTokenExpiresAt' in updates)
-      payload.verificationTokenExpiresAt = updates.verificationTokenExpiresAt
-        ? new Date(updates.verificationTokenExpiresAt)
-        : null;
-    if ('passwordResetToken' in updates)
-      payload.passwordResetToken = updates.passwordResetToken ?? null;
-    if ('passwordResetCode' in updates)
-      payload.passwordResetCode = updates.passwordResetCode ?? null;
-    if ('passwordResetTokenExpiresAt' in updates)
-      payload.passwordResetTokenExpiresAt = updates.passwordResetTokenExpiresAt
-        ? new Date(updates.passwordResetTokenExpiresAt)
-        : null;
-
-    const [row] = await db
-      .update(users)
-      .set(payload)
-      .where(eq(users.id, id))
-      .returning();
-
-    return row ? toPublicUser(toStoredUser(row)) : null;
+    const [row] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return row ? toPublicUser(row) : null;
   }
 
-  async setEmailVerified(id: string): Promise<User | null> {
+  async search(query: string, excludeUserId: string) {
+    const trimmed = query.trim();
+    const pattern = `%${trimmed}%`;
+    return db
+      .select({
+        id: users.id,
+        email: users.email,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl,
+        lastSeenAt: userPresence.lastSeenAt,
+        connectionStatus: sql<'none' | 'incoming' | 'outgoing' | 'connected'>`COALESCE((
+          SELECT CASE
+            WHEN cr.status = 'accepted' THEN 'connected'
+            WHEN cr.status = 'pending' AND cr.addressee_id = ${excludeUserId} THEN 'incoming'
+            WHEN cr.status = 'pending' THEN 'outgoing'
+            ELSE 'none'
+          END
+          FROM connection_requests cr
+          WHERE (cr.requester_id = ${excludeUserId} AND cr.addressee_id = ${users.id})
+             OR (cr.addressee_id = ${excludeUserId} AND cr.requester_id = ${users.id})
+          LIMIT 1
+        ), 'none')`,
+        connectionRequestId: sql<string | null>`(
+          SELECT cr.id
+          FROM connection_requests cr
+          WHERE cr.status = 'pending'
+            AND ((cr.requester_id = ${excludeUserId} AND cr.addressee_id = ${users.id})
+              OR (cr.addressee_id = ${excludeUserId} AND cr.requester_id = ${users.id}))
+          LIMIT 1
+        )`
+      })
+      .from(users)
+      .leftJoin(userPresence, eq(userPresence.userId, users.id))
+      .where(and(ne(users.id, excludeUserId), eq(users.emailVerified, true), ...(trimmed ? [or(ilike(users.email, pattern), ilike(users.displayName, pattern))!] : [])))
+      .orderBy(sql`${userPresence.lastSeenAt} DESC NULLS LAST`, asc(users.displayName))
+      .limit(30);
+  }
+
+  async listIncomingConnectionRequests(userId: string) {
+    return db.select({ id: connectionRequests.id, createdAt: connectionRequests.createdAt, user: { id: users.id, email: users.email, displayName: users.displayName, avatarUrl: users.avatarUrl, lastSeenAt: userPresence.lastSeenAt } })
+      .from(connectionRequests)
+      .innerJoin(users, eq(users.id, connectionRequests.requesterId))
+      .leftJoin(userPresence, eq(userPresence.userId, users.id))
+      .where(and(eq(connectionRequests.addresseeId, userId), eq(connectionRequests.status, 'pending')))
+      .orderBy(desc(connectionRequests.createdAt));
+  }
+
+  async requestConnection(userId: string, targetUserId: string) {
+    const existing = await db.query.connectionRequests.findFirst({ where: or(and(eq(connectionRequests.requesterId,userId),eq(connectionRequests.addresseeId,targetUserId)),and(eq(connectionRequests.requesterId,targetUserId),eq(connectionRequests.addresseeId,userId))) });
+    if (existing?.status === 'accepted' || existing?.status === 'pending') return { request: existing, shouldNotify: false };
+    if (existing) { const [row]=await db.update(connectionRequests).set({requesterId:userId,addresseeId:targetUserId,status:'pending',createdAt:new Date(),respondedAt:null}).where(eq(connectionRequests.id,existing.id)).returning(); return { request: row!, shouldNotify: true }; }
+    const [row]=await db.insert(connectionRequests).values({id:randomUUID(),requesterId:userId,addresseeId:targetUserId}).returning(); return { request: row!, shouldNotify: true };
+  }
+
+  async respondConnection(userId: string, requestId: string, accept: boolean) {
+    const [row]=await db.update(connectionRequests).set({status:accept?'accepted':'rejected',respondedAt:new Date()}).where(and(eq(connectionRequests.id,requestId),eq(connectionRequests.addresseeId,userId),eq(connectionRequests.status,'pending'))).returning();
+    return row ?? null;
+  }
+
+  async setEmailVerified(id: string) {
     return this.update(id, {
       emailVerified: true,
-      verificationToken: undefined,
-      verificationCode: undefined,
-      verificationTokenExpiresAt: undefined
+      verificationToken: null,
+      verificationCode: null,
+      verificationTokenExpiresAt: null
     });
   }
 }

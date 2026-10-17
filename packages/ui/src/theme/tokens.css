@@ -1,57 +1,59 @@
 :root {
-  --surface-bg: 250 251 252;
+  --surface-bg: 255 255 255;
   --surface-panel: 255 255 255;
   --surface-elevated: 255 255 255;
-  --surface-soft: 241 245 249;
-  --surface-hover: 226 232 240;
+  --surface-soft: 239 245 242;
+  --surface-hover: 226 236 231;
 
-  --text-primary: 15 23 42;
-  --text-secondary: 71 85 105;
-  --text-muted: 100 116 139;
-  --text-accent: 37 99 235;
+  --text-primary: 18 28 24;
+  --text-secondary: 73 91 82;
+  --text-muted: 113 130 121;
+  --text-accent: 31 143 104;
+  --text-link: 24 120 86;
 
-  --border-default: 226 232 240;
-  --border-subtle: 241 245 249;
-  --border-strong: 203 213 225;
+  --border-default: 221 230 225;
+  --border-subtle: 239 244 241;
+  --border-strong: 194 210 201;
 
-  --accent-primary: 37 99 235;
-  --accent-primary-hover: 29 78 216;
-  --accent-primary-muted: 59 130 246;
-  --accent-subtle: 219 234 254;
+  --accent-primary: 31 143 104;
+  --accent-primary-hover: 24 120 86;
+  --accent-primary-muted: 54 166 127;
+  --accent-subtle: 223 245 236;
 
-  --status-success: 34 197 94;
-  --status-warning: 245 158 11;
-  --status-error: 239 68 68;
+  --status-success: 34 160 103;
+  --status-warning: 212 143 31;
+  --status-error: 220 66 66;
 
-  --ring-focus: 37 99 235;
+  --ring-focus: 31 143 104;
   --overlay: 0 0 0;
 }
 
 .dark {
-  --surface-bg: 10 12 16;
-  --surface-panel: 16 18 24;
-  --surface-elevated: 22 25 32;
-  --surface-soft: 32 36 44;
-  --surface-hover: 40 44 54;
+  --surface-bg: 9 13 11;
+  --surface-panel: 15 21 18;
+  --surface-elevated: 20 28 24;
+  --surface-soft: 29 39 34;
+  --surface-hover: 37 49 43;
 
-  --text-primary: 248 250 252;
-  --text-secondary: 148 163 184;
-  --text-muted: 100 116 139;
-  --text-accent: 99 179 237;
+  --text-primary: 246 250 248;
+  --text-secondary: 159 177 168;
+  --text-muted: 112 132 122;
+  --text-accent: 83 211 160;
+  --text-link: 94 221 172;
 
-  --border-default: 38 42 52;
-  --border-subtle: 28 32 40;
-  --border-strong: 55 60 72;
+  --border-default: 39 52 45;
+  --border-subtle: 29 39 34;
+  --border-strong: 57 73 65;
 
-  --accent-primary: 99 179 237;
-  --accent-primary-hover: 125 196 247;
-  --accent-primary-muted: 99 179 237;
-  --accent-subtle: 56 100 138;
+  --accent-primary: 72 201 151;
+  --accent-primary-hover: 94 221 172;
+  --accent-primary-muted: 72 201 151;
+  --accent-subtle: 34 88 67;
 
-  --status-success: 74 222 128;
-  --status-warning: 251 191 36;
-  --status-error: 248 113 113;
+  --status-success: 76 214 147;
+  --status-warning: 239 181 73;
+  --status-error: 246 113 113;
 
-  --ring-focus: 99 179 237;
+  --ring-focus: 72 201 151;
   --overlay: 0 0 0;
 }

@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { User } from '@vibeline/types';
+import type { User } from '@vibeline/contracts';
 
 import { env } from '@/config/env';
+import { AppError } from '@/common/errors/app-error';
 import { logger } from '@/config/logger';
 import { oauthService } from '@/services/oauth.service';
 import { signOAuthState, verifyOAuthState } from '@/utils/jwt';
@@ -14,14 +15,16 @@ import {
   getRefreshTokenFromCookieHeader
 } from './auth.cookies';
 import {
-  forgotPasswordSchema,
-  loginSchema,
-  refreshTokenSchema,
-  registerSchema,
-  resendVerificationSchema,
-  resetPasswordSchema,
-  verifyEmailSchema
-} from './auth.schema';
+  addPasswordRequestSchema as addPasswordSchema,
+  changePasswordRequestSchema as changePasswordSchema,
+  forgotPasswordRequestSchema as forgotPasswordSchema,
+  loginRequestSchema as loginSchema,
+  refreshRequestSchema as refreshTokenSchema,
+  registerRequestSchema as registerSchema,
+  resendVerificationRequestSchema as resendVerificationSchema,
+  resetPasswordRequestSchema as resetPasswordSchema,
+  verifyEmailRequestSchema as verifyEmailSchema
+} from '@vibeline/contracts';
 
 const getOAuthCallbackErrorUrl = (errorCode: string) => {
   const params = new URLSearchParams({ error: errorCode });
@@ -52,7 +55,7 @@ export const registerHandler = async (request: FastifyRequest, reply: FastifyRep
   const payload = validate(registerSchema, request.body);
   const result = await authService.register(payload);
 
-  return sendAuthResponse(reply, result, 201);
+  return reply.status(201).send(result);
 };
 
 export const loginHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -99,7 +102,9 @@ export const refreshTokenHandler = async (request: FastifyRequest, reply: Fastif
   return sendAuthResponse(reply, result, 200);
 };
 
-export const logoutHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
+export const logoutHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  const refreshToken = getRefreshTokenFromCookieHeader(request.headers.cookie);
+  if (refreshToken) await authService.logout(refreshToken);
   reply.header('Set-Cookie', buildClearRefreshTokenCookie());
   return reply.status(204).send();
 };
@@ -137,7 +142,7 @@ export const googleCallbackHandler = async (
   try {
     verifyOAuthState(state, 'google');
   } catch (err) {
-    logger.warn({ error: err }, 'Invalid Google OAuth state');
+    logger.warn({ err }, 'Invalid Google OAuth state');
     return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
   }
 
@@ -145,65 +150,14 @@ export const googleCallbackHandler = async (
     const result = await oauthService.handleGoogleCallback(code);
     reply.header('Set-Cookie', buildRefreshTokenCookie(result.tokens.refreshToken));
 
-    const params = new URLSearchParams({
-      token: result.tokens.accessToken
-    });
-
-    return reply.redirect(`${env.APP_URL}/auth/callback?${params.toString()}`);
+    return reply.redirect(`${env.APP_URL}/auth/callback`);
   } catch (err) {
-    logger.error({ error: err }, 'Google OAuth callback failed');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_failed'));
+    request.log.error({ err }, 'Google OAuth callback failed');
+    return reply.redirect(getOAuthCallbackErrorUrl(err instanceof AppError ? err.code.toLowerCase() : 'oauth_failed'));
   }
 };
 
-export const githubAuthHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const state = signOAuthState('github');
-    const authUrl = oauthService.getGithubAuthUrl(state);
-    return reply.redirect(authUrl);
-  } catch (error) {
-    logger.error({ error }, 'GitHub OAuth not configured');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_not_configured'));
-  }
-};
 
-export const githubCallbackHandler = async (
-  request: FastifyRequest<{ Querystring: { code?: string; error?: string; state?: string } }>,
-  reply: FastifyReply
-) => {
-  const { code, error, state } = request.query;
+export const changePasswordHandler = async (request: FastifyRequest, reply: FastifyReply) => { const payload = validate(changePasswordSchema, request.body); const result = await authService.changePassword(request.user.sub, payload); reply.header('Set-Cookie', buildClearRefreshTokenCookie()); return reply.status(200).send(result); };
 
-  if (error) {
-    logger.warn({ error }, 'GitHub OAuth error');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_denied'));
-  }
-
-  if (!code) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_no_code'));
-  }
-
-  if (!state) {
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    verifyOAuthState(state, 'github');
-  } catch (err) {
-    logger.warn({ error: err }, 'Invalid GitHub OAuth state');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_invalid_state'));
-  }
-
-  try {
-    const result = await oauthService.handleGithubCallback(code);
-    reply.header('Set-Cookie', buildRefreshTokenCookie(result.tokens.refreshToken));
-
-    const params = new URLSearchParams({
-      token: result.tokens.accessToken
-    });
-
-    return reply.redirect(`${env.APP_URL}/auth/callback?${params.toString()}`);
-  } catch (err) {
-    logger.error({ error: err }, 'GitHub OAuth callback failed');
-    return reply.redirect(getOAuthCallbackErrorUrl('oauth_failed'));
-  }
-};
+export const addPasswordHandler = async (request: FastifyRequest, reply: FastifyReply) => { const payload = validate(addPasswordSchema, request.body); return reply.status(201).send(await authService.addPassword(request.user.sub, payload)); };
