@@ -30,6 +30,10 @@ import statusDelivered from './status-delivered.svg';
 import statusSent from './status-sent.svg';
 import videoBlue from './video-blue.svg';
 import wave from './wave.svg';
+import monitorSmartphone from './monitor-smartphone.svg';
+import shieldCheck from '../../png/icons8-security-shield-66.png';
+import sparkles from './sparkles.svg';
+
 
 export const chatIcons = {
   actionsBlue: actionsBlue.src,
@@ -71,4 +75,12 @@ export const composerIcons = {
   camera: { blue: chatIcons.cameraFooterBlue, gray: chatIcons.cameraFooterGray },
   gallery: { blue: chatIcons.galleryBlue, gray: chatIcons.galleryGray },
   audio: { blue: chatIcons.audioBlue, gray: chatIcons.audioGray }
+} as const;
+
+
+
+export const homeIcons = {
+  sparkles: sparkles.src,
+  shieldCheck: shieldCheck.src,
+  monitorSmartphone: monitorSmartphone.src,
 } as const;
