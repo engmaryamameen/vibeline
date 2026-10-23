@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">Good conversations. Closer connections.</title>
+  <desc id="description">Original VibeLine illustration: a desktop conversation with a shared landscape and a small overlapping phone showing a voice message. All people and messages are fictional.</desc>
+
+  <defs>
+    <filter id="card-shadow" x="-35%" y="-35%" width="180%" height="195%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="21" flood-color="#285b43" flood-opacity=".13"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#285b43" flood-opacity=".035"/>
+    </filter>
+    <filter id="small-shadow" x="-35%" y="-45%" width="180%" height="210%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#285b43" flood-opacity=".12"/>
+    </filter>
+    <linearGradient id="outgoing" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2d916d"/><stop offset="1" stop-color="#17654e"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff"/><stop offset="1" stop-color="#f9fcfa"/>
+    </linearGradient>
+    <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f6dec2"/><stop offset="1" stop-color="#f5e9cf"/>
+    </linearGradient>
+    <symbol id="maya" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#f2d5bd"/>
+      <path d="M10 24C7 9 19 4 26 7c12 1 14 12 11 22l-9 6-16-5z" fill="#382e2a"/>
+      <path d="M5 48c0-11 8-17 19-17s20 6 20 17" fill="#24775d"/>
+      <path d="M19 29h10v9c-3 4-7 4-10 0" fill="#a86543"/>
+      <path d="M14 18c3-1 9-4 12-8 2 5 7 8 9 9l-2 8c-2 6-5 9-9 9s-8-4-10-11z" fill="#bb7c55"/>
+      <path d="M18 21h2m8 0h2" stroke="#382e2a" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M24 22l-1 5h3" fill="none" stroke="#955537" stroke-linecap="round"/>
+      <path d="M20 29c2 2 5 2 7 0" fill="none" stroke="#653b2e" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="13.5" cy="25" r="1.8" fill="#deb86e"/>
+    </symbol>
+    <symbol id="zoya" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#dfdaf4"/>
+      <path d="M9 46V22C7 10 15 5 24 6c11 0 16 8 15 20l2 20z" fill="#332c37"/>
+      <path d="M7 48c2-11 9-17 17-17 10 0 17 6 19 17" fill="#8f7aaf"/>
+      <path d="M19 29h10v9c-3 3-7 3-10 0" fill="#ba8763"/>
+      <path d="M14 18c6 1 12-4 15-7 0 5 2 8 5 10l-2 8c-2 4-5 7-9 7s-7-4-9-10z" fill="#dca77e"/>
+      <path d="M18 22h2m7 0h2" stroke="#392d31" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M24 23l-1 4h2" fill="none" stroke="#b27858" stroke-linecap="round"/>
+      <path d="M20 29c2 2 5 2 7 0" fill="none" stroke="#805045" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ali" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#d6e9dc"/>
+      <path d="M7 48c1-11 9-17 17-17 10 0 17 6 18 17" fill="#d7ab54"/>
+      <path d="M19 28h10v10c-3 2-7 2-10 0" fill="#ad7654"/>
+      <path d="M13 15c3-8 19-8 22 2v10c-2 7-6 10-11 10s-9-4-11-11" fill="#bd8966"/>
+      <path d="M12 22C7 10 19 3 27 7c9 0 13 7 8 18l-3-10c-6 3-10 3-16 1l-1 9z" fill="#342f29"/>
+      <path d="M18 22h2m8 0h2" stroke="#382e2a" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M24 23l-1 4h3" fill="none" stroke="#995c40" stroke-linecap="round"/>
+      <path d="M20 30c2 2 5 2 7 0" fill="none" stroke="#653b2e" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <clipPath id="landscape-clip"><rect width="240" height="150" rx="15"/></clipPath>
+    <symbol id="landscape" viewBox="0 0 240 150">
+      <g clip-path="url(#landscape-clip)">
+      <rect width="240" height="150" rx="15" fill="url(#sunset)"/>
+      <circle cx="177" cy="36" r="20" fill="#fff8dd"/>
+      <path d="M0 111c29-43 63-51 94-25s67 35 146-9v73H0" fill="#a9cbb1"/>
+      <path d="M0 126c53-48 86-34 125-12s72 16 115-11v47H0" fill="#629f87"/>
+      <path d="M0 140c53-31 75-22 115-5s86 4 125-8v23H0" fill="#21654f"/>
+      <path d="M90 150c16-19 27-33 51-44 9-4 13-8 18-12-23 26-28 36-32 56" fill="#f3e4c1"/>
+      <path d="M34 73l-3 53" fill="none" stroke="#286951" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="32" cy="63" rx="18" ry="25" fill="#45866b"/>
+      <ellipse cx="42" cy="78" rx="13" ry="18" fill="#33765e"/>
+      <path d="M195 65q6-5 12 0 6-5 12 0" fill="none" stroke="#9aa792" stroke-width="2" stroke-linecap="round"/>
+      </g>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 24 24">
+      <path d="M12 21S2 15.2 2 8.5a5.5 5.5 0 0 1 10-3.2 5.5 5.5 0 0 1 10 3.2C22 15.2 12 21 12 21z" fill="currentColor"/>
+    </symbol>
+    <symbol id="spark" viewBox="0 0 40 48">
+      <path d="M20 0C19 16 13 22 0 24c13 2 19 8 20 24 1-16 7-22 20-24C27 22 21 16 20 0z" fill="currentColor"/>
+    </symbol>
+    <symbol id="send" viewBox="0 0 24 24">
+      <path d="m4 10 16-6-6 16-3-7-7-3zm7 3 9-9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+
+    <!-- Quiet orbital lines bring the composition together without competing with the cards. -->
+    <circle cx="414" cy="283" r="218" stroke="#fff" stroke-opacity=".8"/>
+    <circle cx="414" cy="283" r="249" stroke="#fff" stroke-opacity=".45"/>
+    <circle cx="724" cy="444" r="5" fill="#a8cbb2"/>
+    <circle cx="342" cy="501" r="4" fill="#dfbb88"/>
+    <use href="#spark" x="685" y="49" width="31" height="38" color="#a895c3"/>
+    <use href="#spark" x="715" y="79" width="12" height="15" color="#c6b6dc"/>
+
+    <!-- Main desktop chat. -->
+    <g transform="translate(65 96) rotate(-4 261 172)">
+      <rect width="526" height="354" rx="26" fill="url(#paper)" stroke="#e5eee7" filter="url(#card-shadow)"/>
+      <use href="#maya" x="23" y="18" width="44" height="44"/>
+      <text x="79" y="36" font-size="18" font-weight="700" fill="#203e33">Maya</text>
+      <circle cx="83" cy="53" r="3" fill="#35a275"/>
+      <text x="91" y="57" font-size="10" fill="#7b8d83">Active now</text>
+      <g stroke="#6b897a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="445" y="28" width="17" height="13" rx="3"/>
+        <path d="m462 32 7-4v13l-7-4"/>
+      </g>
+      <g fill="#6b897a"><circle cx="493" cy="29" r="1.7"/><circle cx="493" cy="35" r="1.7"/><circle cx="493" cy="41" r="1.7"/></g>
+      <path d="M20 77h486" stroke="#edf2ee"/>
+      <text x="263" y="99" text-anchor="middle" font-size="8" letter-spacing="1.2" fill="#97a69d">TODAY, 4:32 PM</text>
+      <rect x="24" y="116" width="260" height="42" rx="16" fill="#eef3ef"/>
+      <text x="40" y="142" font-size="16" fill="#314b40">Found our Saturday spot.</text>
+      <use href="#landscape" x="24" y="167" width="216" height="135"/>
+      <rect x="262" y="199" width="240" height="64" rx="18" fill="url(#outgoing)"/>
+      <text x="278" y="225" font-size="15" fill="#fff">Fresh air and good company?</text>
+      <text x="278" y="246" font-size="15" fill="#fff">I’m in!</text>
+      <rect x="453" y="252" width="42" height="24" rx="12" fill="white" stroke="#edf2ee"/>
+      <use href="#heart" x="461" y="258" width="12" height="12" color="#dc9b85"/>
+      <text x="478" y="269" font-size="9" fill="#8b9b90">1</text>
+      <rect x="24" y="316" width="438" height="23" rx="11.5" fill="#f0f4f1"/>
+      <text x="38" y="331" font-size="9" fill="#a0ada4">Message...</text>
+      <circle cx="486" cy="328" r="13" fill="#e8f3ec"/>
+      <use href="#send" x="478" y="320" width="16" height="16" color="#357d5d"/>
+    </g>
+
+    <!-- A small, joyful sticker. -->
+    <g transform="translate(15 112) rotate(-14 32 32)">
+      <rect width="64" height="64" rx="22" fill="#f5d7ac" filter="url(#small-shadow)"/>
+      <path d="M21 24v4m23-4v4m-27 9q15 14 30-1" stroke="#aa7748" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- Secondary phone-sized chat. -->
+    <g transform="translate(564 164) rotate(8 96 161)">
+      <rect width="192" height="328" rx="31" fill="url(#paper)" stroke="#e7eee9" filter="url(#card-shadow)"/>
+      <rect x="66" y="13" width="60" height="4" rx="2" fill="#dce5de"/>
+      <use href="#zoya" x="17" y="33" width="31" height="31"/>
+      <text x="57" y="46" font-size="15" font-weight="700" fill="#294337">Zoya</text>
+      <text x="57" y="61" font-size="8" fill="#8a998f">A little catch-up</text>
+      <path d="M17 80h158" stroke="#e9efea"/>
+      <rect x="16" y="96" width="159" height="61" rx="15" fill="#eee8f8"/>
+      <text x="29" y="120" font-size="13" fill="#51485f">This made me</text>
+      <text x="29" y="139" font-size="13" fill="#51485f">think of you.</text>
+      <rect x="16" y="170" width="159" height="65" rx="17" fill="#e4f1e8"/>
+      <circle cx="42" cy="201" r="14" fill="#277858"/>
+      <path d="m39 194 9 7-9 7z" fill="#fff"/>
+<g transform="translate(64 201) scale(0.88)" fill="#519a73"><rect x="0.0" y="-3" width="2.6" height="6" rx="1.3"/><rect x="4.5" y="-6.5" width="2.6" height="13" rx="1.3"/><rect x="9.0" y="-4" width="2.6" height="8" rx="1.3"/><rect x="13.5" y="-10.5" width="2.6" height="21" rx="1.3"/><rect x="18.0" y="-7.5" width="2.6" height="15" rx="1.3"/><rect x="22.5" y="-13.5" width="2.6" height="27" rx="1.3"/><rect x="27.0" y="-6" width="2.6" height="12" rx="1.3"/><rect x="31.5" y="-9.5" width="2.6" height="19" rx="1.3"/><rect x="36.0" y="-4.5" width="2.6" height="9" rx="1.3"/><rect x="40.5" y="-12.5" width="2.6" height="25" rx="1.3"/><rect x="45.0" y="-16.5" width="2.6" height="33" rx="1.3"/><rect x="49.5" y="-10" width="2.6" height="20" rx="1.3"/><rect x="54.0" y="-5.5" width="2.6" height="11" rx="1.3"/><rect x="58.5" y="-13" width="2.6" height="26" rx="1.3"/><rect x="63.0" y="-8.5" width="2.6" height="17" rx="1.3"/><rect x="67.5" y="-15.5" width="2.6" height="31" rx="1.3"/><rect x="72.0" y="-11.5" width="2.6" height="23" rx="1.3"/><rect x="76.5" y="-6.5" width="2.6" height="13" rx="1.3"/><rect x="81.0" y="-9.5" width="2.6" height="19" rx="1.3"/><rect x="85.5" y="-5" width="2.6" height="10" rx="1.3"/><rect x="90.0" y="-12" width="2.6" height="24" rx="1.3"/><rect x="94.5" y="-8" width="2.6" height="16" rx="1.3"/><rect x="99.0" y="-3.5" width="2.6" height="7" rx="1.3"/><rect x="103.5" y="-6" width="2.6" height="12" rx="1.3"/></g>
+      <text x="169" y="253" text-anchor="end" font-size="9" fill="#94a397">0:12</text>
+      <rect x="16" y="280" width="125" height="29" rx="14.5" fill="#f0f4f1"/>
+      <text x="28" y="299" font-size="9" fill="#a0ada4">Message...</text>
+      <circle cx="160" cy="294" r="14" fill="#e6f1e9"/>
+      <path d="M154 294h12m-6-6v12" stroke="#558870" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+
+    <!-- A supporting note, not an interactive control. -->
+    <g transform="translate(28 451) rotate(-3 137 35)">
+      <rect width="279" height="70" rx="21" fill="#fff" stroke="#edf3ee" filter="url(#small-shadow)"/>
+      <circle cx="37" cy="35" r="22" fill="#eee7f7"/>
+      <use href="#heart" x="27" y="25" width="20" height="20" color="#9b86b5"/>
+      <text x="73" y="30" font-size="16" font-weight="700" fill="#294337">The little things.</text>
+      <text x="73" y="48" font-size="11" fill="#819186">Better when you share them.</text>
+    </g>
+  </g>
+</svg>

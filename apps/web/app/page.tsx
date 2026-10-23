@@ -143,13 +143,30 @@ export default function HomePage() {
                 key={label}
                 className="flex items-center gap-2 text-xs font-medium text-content-secondary sm:text-sm"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--accent-primary)/0.07)] text-accent">
+                <span
+                  aria-hidden="true"
+                  className="
+                    inline-flex h-9 w-9 shrink-0 items-center justify-center
+                    rounded-full
+                    bg-[rgb(var(--accent-primary)/0.08)]
+                    text-accent
+                    ring-1 ring-inset ring-[rgb(var(--accent-primary)/0.10)]
+                  "
+                >
                   <span
-                    aria-hidden="true"
-                    className="block h-3.5 w-3.5 shrink-0 bg-current"
+                    className="block h-5 w-5 shrink-0 bg-current"
                     style={{
-                      WebkitMask: `url("${icon}") center / contain no-repeat`,
-                      mask: `url("${icon}") center / contain no-repeat`,
+                      WebkitMaskImage: `url("${icon}")`,
+                      maskImage: `url("${icon}")`,
+
+                      WebkitMaskSize: 'contain',
+                      maskSize: 'contain',
+
+                      WebkitMaskPosition: 'center',
+                      maskPosition: 'center',
+
+                      WebkitMaskRepeat: 'no-repeat',
+                      maskRepeat: 'no-repeat',
                     }}
                   />
                 </span>
