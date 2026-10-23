@@ -46,6 +46,7 @@ class ChatService {
   async addMember(actorId:string,conversationId:string,newUserId:string){
     if(!(await chatRepository.usersExist([newUserId])))throw new AppError(404,'USER_NOT_FOUND','User not found');
     this.assertMembershipMutation(await chatRepository.addMember(conversationId,actorId,newUserId));
+    await this.publishMembershipChange(conversationId,[newUserId]);
     return this.getConversation(actorId,conversationId);
   }
 
@@ -62,12 +63,22 @@ class ChatService {
     if(result==='self')return this.leaveConversation(actorId,conversationId);
     if(result==='owner')throw new AppError(409,'OWNER_CANNOT_BE_REMOVED','The owner must leave through the ownership-transfer path');
     this.assertMembershipMutation(result);
+    await this.publishMembershipChange(conversationId,[targetId]);
   }
 
   async leaveConversation(userId:string,conversationId:string){
     const result=await chatRepository.leaveConversation(conversationId,userId);
     if(result==='not-found')throw new AppError(404,'CONVERSATION_NOT_FOUND','Conversation not found');
     if(result==='direct')throw new AppError(400,'DIRECT_CONVERSATION_LEAVE_UNSUPPORTED','Direct conversations cannot be left');
+  }
+
+  private async publishMembershipChange(conversationId:string,affectedUserIds:string[]){
+    try {
+      const activeIds=(await chatRepository.listMessageRecipientIds(conversationId,2_147_483_647)).map(member=>member.userId);
+      await realtimePublisher.publish([...activeIds,...affectedUserIds],{type:'conversation.updated',conversationId,payload:{}});
+    } catch(error) {
+      this.logger?.error({error,operation:'chat.realtime.membership',conversationId},'membership realtime publish failed');
+    }
   }
 
   async listMessages(userId:string,conversationId:string,before:number|undefined,after:number|undefined,limit:number){

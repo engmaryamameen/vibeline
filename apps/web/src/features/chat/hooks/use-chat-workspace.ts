@@ -23,7 +23,7 @@ export function useChatWorkspace(){
   switch(event.type){
    case 'call.updated':case 'call.signal':return;
    case 'message.reaction':{if(event.conversationId===selectedRef.current)void api.listReactions(event.conversationId).then(r=>setReactions(r.reactions)).catch(()=>undefined);return;}
-   case 'conversation.updated':{void loadConversations().catch(()=>undefined);return;}
+   case 'conversation.updated':{void loadConversations().catch(()=>undefined);if(event.conversationId===selectedRef.current){void refreshMembers(event.conversationId).catch(()=>{setMembers([]);});void catchUp().catch(()=>undefined);}return;}
    case 'receipt.updated':{const receipt=event.payload;setMembers(ms=>ms.map(m=>m.userId===receipt.userId?{...m,deliveredSequence:receipt.deliveredSequence,readSequence:receipt.readSequence}:m));setConversations(cs=>cs.map(c=>c.peerUserId===receipt.userId?{...c,peerDeliveredSequence:receipt.deliveredSequence,peerReadSequence:receipt.readSequence}:c));return;}
    case 'presence.updated':{const presence=event.payload;setMembers(ms=>ms.map(m=>m.userId===presence.userId?{...m,lastSeenAt:presence.lastSeenAt}:m));setConversations(cs=>cs.map(c=>c.peerUserId===presence.userId?{...c,peerLastSeenAt:presence.lastSeenAt}:c));return;}
    default:break;
@@ -34,7 +34,7 @@ export function useChatWorkspace(){
   mergeMessages([message]);
   void loadConversations().catch(()=>undefined);
   if(message.assistantId&&selectedRef.current)void refreshAssistant(selectedRef.current).catch(()=>undefined);
- },[api,loadConversations,mergeMessages,catchUp,refreshAssistant]);
+ },[api,loadConversations,mergeMessages,catchUp,refreshAssistant,refreshMembers]);
  const onRealtimeConnected=useCallback(()=>{void catchUp().catch(()=>undefined);const id=selectedRef.current;if(id)void refreshMembers(id).catch(()=>undefined);},[catchUp,refreshMembers]);
  useRealtimeEvents(onRealtime);useRealtimeConnect(onRealtimeConnected);
  useEffect(()=>{if(!selectedId)return;const timer=window.setInterval(()=>{void catchUp().catch(()=>undefined);},60_000);return()=>window.clearInterval(timer);},[selectedId,catchUp]);
@@ -53,8 +53,8 @@ export function useChatWorkspace(){
  const clearSearch=useCallback(()=>{searchRef.current='';setSearch('');setSearchResults([]);},[]);
  const createConversation=useCallback(async(user:UserSearchResult,type:'direct'|'group',title?:string)=>{const result=await api.createConversation([user.id],type,title);clearSearch();await loadConversations();setSelectedId(result.conversation.id);},[api,clearSearch,loadConversations]);
  const createGroup=useCallback(async(users:UserSearchResult[],title:string)=>{const result=await api.createConversation(users.map(user=>user.id),'group',title);clearSearch();await loadConversations();setSelectedId(result.conversation.id);},[api,clearSearch,loadConversations]);
- const removeMember=useCallback(async(userId:string)=>{if(!selectedId)return;await api.removeMember(selectedId,userId);await refreshMembers(selectedId);},[api,selectedId,refreshMembers]);
- const addMember=useCallback(async(userId:string)=>{if(!selectedId)return;await api.addMember(selectedId,userId);await refreshMembers(selectedId);},[api,selectedId,refreshMembers]);
+ const removeMember=useCallback(async(userId:string)=>{if(!selectedId)return;await api.removeMember(selectedId,userId);await refreshMembers(selectedId);await loadConversations();},[api,selectedId,refreshMembers,loadConversations]);
+ const addMember=useCallback(async(userId:string)=>{if(!selectedId)return;await api.addMember(selectedId,userId);await refreshMembers(selectedId);await loadConversations();},[api,selectedId,refreshMembers,loadConversations]);
  const rename=useCallback(async(title:string)=>{if(!selectedId)return;await api.updateConversation(selectedId,title);await loadConversations();},[api,selectedId,loadConversations]);
  const editMessage=useCallback(async(messageId:string,body:string)=>{if(!selectedId)return;const result=await api.editMessage(selectedId,messageId,body);mergeMessages([result.message]);},[api,selectedId,mergeMessages]);
  const deleteMessage=useCallback(async(messageId:string,scope:'me'|'everyone')=>{if(!selectedId)return;const result=await api.deleteMessage(selectedId,messageId,scope);if(scope==='me')setMessages(existing=>existing.filter(message=>message.id!==messageId));else mergeMessages([result.message]);await loadConversations();},[api,selectedId,mergeMessages,loadConversations]);

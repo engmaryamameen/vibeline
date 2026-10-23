@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">A little hello. A lot of connection.</title>
+  <desc id="description">Original VibeLine illustration: a friendly phone conversation surrounded by portraits, a voice note, a heart sticker, and a greeting. All people and messages are fictional.</desc>
+
+  <defs>
+    <filter id="card-shadow" x="-35%" y="-35%" width="180%" height="195%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="21" flood-color="#285b43" flood-opacity=".13"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#285b43" flood-opacity=".035"/>
+    </filter>
+    <filter id="small-shadow" x="-35%" y="-45%" width="180%" height="210%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#285b43" flood-opacity=".12"/>
+    </filter>
+    <linearGradient id="outgoing" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2d916d"/><stop offset="1" stop-color="#17654e"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff"/><stop offset="1" stop-color="#f9fcfa"/>
+    </linearGradient>
+    <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f6dec2"/><stop offset="1" stop-color="#f5e9cf"/>
+    </linearGradient>
+    <symbol id="maya" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#f2d5bd"/>
+      <path d="M10 24C7 9 19 4 26 7c12 1 14 12 11 22l-9 6-16-5z" fill="#382e2a"/>
+      <path d="M5 48c0-11 8-17 19-17s20 6 20 17" fill="#24775d"/>
+      <path d="M19 29h10v9c-3 4-7 4-10 0" fill="#a86543"/>
+      <path d="M14 18c3-1 9-4 12-8 2 5 7 8 9 9l-2 8c-2 6-5 9-9 9s-8-4-10-11z" fill="#bb7c55"/>
+      <path d="M18 21h2m8 0h2" stroke="#382e2a" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M24 22l-1 5h3" fill="none" stroke="#955537" stroke-linecap="round"/>
+      <path d="M20 29c2 2 5 2 7 0" fill="none" stroke="#653b2e" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="13.5" cy="25" r="1.8" fill="#deb86e"/>
+    </symbol>
+    <symbol id="zoya" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#dfdaf4"/>
+      <path d="M9 46V22C7 10 15 5 24 6c11 0 16 8 15 20l2 20z" fill="#332c37"/>
+      <path d="M7 48c2-11 9-17 17-17 10 0 17 6 19 17" fill="#8f7aaf"/>
+      <path d="M19 29h10v9c-3 3-7 3-10 0" fill="#ba8763"/>
+      <path d="M14 18c6 1 12-4 15-7 0 5 2 8 5 10l-2 8c-2 4-5 7-9 7s-7-4-9-10z" fill="#dca77e"/>
+      <path d="M18 22h2m7 0h2" stroke="#392d31" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M24 23l-1 4h2" fill="none" stroke="#b27858" stroke-linecap="round"/>
+      <path d="M20 29c2 2 5 2 7 0" fill="none" stroke="#805045" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ali" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="24" fill="#d6e9dc"/>
+      <path d="M7 48c1-11 9-17 17-17 10 0 17 6 18 17" fill="#d7ab54"/>
+      <path d="M19 28h10v10c-3 2-7 2-10 0" fill="#ad7654"/>
+      <path d="M13 15c3-8 19-8 22 2v10c-2 7-6 10-11 10s-9-4-11-11" fill="#bd8966"/>
+      <path d="M12 22C7 10 19 3 27 7c9 0 13 7 8 18l-3-10c-6 3-10 3-16 1l-1 9z" fill="#342f29"/>
+      <path d="M18 22h2m8 0h2" stroke="#382e2a" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M24 23l-1 4h3" fill="none" stroke="#995c40" stroke-linecap="round"/>
+      <path d="M20 30c2 2 5 2 7 0" fill="none" stroke="#653b2e" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <clipPath id="landscape-clip"><rect width="240" height="150" rx="15"/></clipPath>
+    <symbol id="landscape" viewBox="0 0 240 150">
+      <g clip-path="url(#landscape-clip)">
+      <rect width="240" height="150" rx="15" fill="url(#sunset)"/>
+      <circle cx="177" cy="36" r="20" fill="#fff8dd"/>
+      <path d="M0 111c29-43 63-51 94-25s67 35 146-9v73H0" fill="#a9cbb1"/>
+      <path d="M0 126c53-48 86-34 125-12s72 16 115-11v47H0" fill="#629f87"/>
+      <path d="M0 140c53-31 75-22 115-5s86 4 125-8v23H0" fill="#21654f"/>
+      <path d="M90 150c16-19 27-33 51-44 9-4 13-8 18-12-23 26-28 36-32 56" fill="#f3e4c1"/>
+      <path d="M34 73l-3 53" fill="none" stroke="#286951" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="32" cy="63" rx="18" ry="25" fill="#45866b"/>
+      <ellipse cx="42" cy="78" rx="13" ry="18" fill="#33765e"/>
+      <path d="M195 65q6-5 12 0 6-5 12 0" fill="none" stroke="#9aa792" stroke-width="2" stroke-linecap="round"/>
+      </g>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 24 24">
+      <path d="M12 21S2 15.2 2 8.5a5.5 5.5 0 0 1 10-3.2 5.5 5.5 0 0 1 10 3.2C22 15.2 12 21 12 21z" fill="currentColor"/>
+    </symbol>
+    <symbol id="spark" viewBox="0 0 40 48">
+      <path d="M20 0C19 16 13 22 0 24c13 2 19 8 20 24 1-16 7-22 20-24C27 22 21 16 20 0z" fill="currentColor"/>
+    </symbol>
+    <symbol id="send" viewBox="0 0 24 24">
+      <path d="m4 10 16-6-6 16-3-7-7-3zm7 3 9-9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+
+    <circle cx="406" cy="282" r="214" stroke="#fff" stroke-opacity=".85"/>
+    <circle cx="406" cy="282" r="244" stroke="#fff" stroke-opacity=".45"/>
+    <use href="#spark" x="673" y="69" width="33" height="40" color="#a9c6b0"/>
+    <use href="#spark" x="708" y="97" width="12" height="15" color="#b5d0bb"/>
+    <circle cx="731" cy="278" r="4" fill="#d8bd90"/>
+    <circle cx="179" cy="468" r="4" fill="#c3aed7"/>
+
+    <!-- The main phone. -->
+    <g transform="translate(279 33) rotate(4 140 243)">
+      <rect width="280" height="486" rx="39" fill="url(#paper)" stroke="#dbe8df" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="104" y="17" width="72" height="5" rx="2.5" fill="#dce5de"/>
+      <use href="#zoya" x="24" y="37" width="39" height="39"/>
+      <text x="76" y="53" font-size="18" font-weight="700" fill="#294337">Zoya</text>
+      <circle cx="79" cy="70" r="2.5" fill="#35a275"/>
+      <text x="87" y="74" font-size="9" fill="#8a998f">Active now</text>
+      <g fill="#789284"><circle cx="248" cy="48" r="1.7"/><circle cx="248" cy="54" r="1.7"/><circle cx="248" cy="60" r="1.7"/></g>
+      <path d="M24 93h232" stroke="#edf2ee"/>
+      <text x="140" y="115" text-anchor="middle" font-size="8" letter-spacing="1.1" fill="#9caaa0">TODAY</text>
+      <rect x="22" y="132" width="157" height="42" rx="16" fill="#eef3ef"/>
+      <text x="37" y="158" font-size="15" fill="#314b40">Made it home?</text>
+      <rect x="70" y="187" width="188" height="61" rx="17" fill="url(#outgoing)"/>
+      <text x="85" y="211" font-size="15" fill="#fff">Just did.</text>
+      <text x="85" y="232" font-size="12" fill="#e4f5e9">Still smiling about today.</text>
+      <use href="#landscape" x="22" y="264" width="225" height="141"/>
+      <rect x="197" y="394" width="45" height="25" rx="12.5" fill="#fff" stroke="#e9efea"/>
+      <use href="#heart" x="205" y="401" width="12" height="12" color="#dc9b85"/>
+      <text x="222" y="412" font-size="9" fill="#8b9b90">2</text>
+      <rect x="20" y="439" width="198" height="30" rx="15" fill="#eff4f0"/>
+      <text x="33" y="458" font-size="10" fill="#9baa9f">Send a little hello...</text>
+      <circle cx="242" cy="454" r="16" fill="#277858"/>
+      <use href="#send" x="231" y="443" width="22" height="22" color="white"/>
+    </g>
+
+    <!-- Friends are illustrative, not real user profiles. -->
+    <g transform="translate(53 128) rotate(-7 64 26)">
+      <circle cx="26" cy="26" r="27" fill="#f8fbf6"/>
+      <use href="#maya" width="52" height="52"/>
+      <circle cx="72" cy="25" r="28" fill="#f8fbf6"/>
+      <use href="#zoya" x="47" y="0" width="50" height="50"/>
+      <circle cx="118" cy="27" r="27" fill="#f8fbf6"/>
+      <use href="#ali" x="94" y="3" width="48" height="48"/>
+    </g>
+
+    <!-- Floating message, kept clear of the phone's main messages. -->
+    <g transform="translate(14 199) rotate(-7 142 40)">
+      <rect width="284" height="82" rx="24" fill="url(#outgoing)" filter="url(#small-shadow)"/>
+      <text x="24" y="34" font-size="19" fill="#fff">Same time next week?</text>
+      <text x="24" y="59" font-size="12" fill="#c8e7d4">Some plans are worth repeating.</text>
+    </g>
+
+    <!-- Voice note card. -->
+    <g transform="translate(535 143) rotate(7 113 49)">
+      <rect width="227" height="100" rx="24" fill="#f0e9f8" stroke="#fff" stroke-width="2" filter="url(#small-shadow)"/>
+      <text x="22" y="28" font-size="12" font-weight="700" fill="#8a75a6">A voice worth hearing.</text>
+      <circle cx="35" cy="62" r="13" fill="#ab96c2"/>
+      <path d="m32 56 8 6-8 6z" fill="#fff"/>
+<g transform="translate(64 62) scale(1.05)" fill="#9d84b9"><rect x="0.0" y="-3" width="2.6" height="6" rx="1.3"/><rect x="4.5" y="-6.5" width="2.6" height="13" rx="1.3"/><rect x="9.0" y="-4" width="2.6" height="8" rx="1.3"/><rect x="13.5" y="-10.5" width="2.6" height="21" rx="1.3"/><rect x="18.0" y="-7.5" width="2.6" height="15" rx="1.3"/><rect x="22.5" y="-13.5" width="2.6" height="27" rx="1.3"/><rect x="27.0" y="-6" width="2.6" height="12" rx="1.3"/><rect x="31.5" y="-9.5" width="2.6" height="19" rx="1.3"/><rect x="36.0" y="-4.5" width="2.6" height="9" rx="1.3"/><rect x="40.5" y="-12.5" width="2.6" height="25" rx="1.3"/><rect x="45.0" y="-16.5" width="2.6" height="33" rx="1.3"/><rect x="49.5" y="-10" width="2.6" height="20" rx="1.3"/><rect x="54.0" y="-5.5" width="2.6" height="11" rx="1.3"/><rect x="58.5" y="-13" width="2.6" height="26" rx="1.3"/><rect x="63.0" y="-8.5" width="2.6" height="17" rx="1.3"/><rect x="67.5" y="-15.5" width="2.6" height="31" rx="1.3"/><rect x="72.0" y="-11.5" width="2.6" height="23" rx="1.3"/><rect x="76.5" y="-6.5" width="2.6" height="13" rx="1.3"/><rect x="81.0" y="-9.5" width="2.6" height="19" rx="1.3"/><rect x="85.5" y="-5" width="2.6" height="10" rx="1.3"/><rect x="90.0" y="-12" width="2.6" height="24" rx="1.3"/><rect x="94.5" y="-8" width="2.6" height="16" rx="1.3"/><rect x="99.0" y="-3.5" width="2.6" height="7" rx="1.3"/><rect x="103.5" y="-6" width="2.6" height="12" rx="1.3"/></g>
+      <text x="203" y="76" text-anchor="end" font-size="9" fill="#9d8eaa">0:18</text>
+    </g>
+
+    <!-- Little heart note. -->
+    <g transform="translate(63 338) rotate(-10 64 64)">
+      <rect width="128" height="128" rx="29" fill="#f9e3bf" filter="url(#small-shadow)"/>
+      <use href="#heart" x="44" y="27" width="43" height="43" color="#c28b5e"/>
+      <text x="64" y="103" text-anchor="middle" font-size="13" fill="#a5754d">made my day</text>
+    </g>
+
+    <g transform="translate(526 361) rotate(-4 119 42)">
+      <rect width="238" height="84" rx="24" fill="#fff" stroke="#edf3ee" filter="url(#small-shadow)"/>
+      <use href="#ali" x="17" y="20" width="44" height="44"/>
+      <text x="76" y="37" font-size="16" font-weight="700" fill="#294337">A little hello.</text>
+      <text x="76" y="57" font-size="10.5" fill="#819186">A whole lot of connection.</text>
+    </g>
+  </g>
+</svg>
